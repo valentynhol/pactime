@@ -207,6 +207,7 @@ class Game:
         self.window = tk.Tk()
         self.window.title('Pactime')
         self.window.geometry(str(self.window_width) + 'x' + str(self.window_height))
+        self.window.iconphoto(False, tk.PhotoImage(file='icon.png'))
 
         self.field = tk.Canvas(self.window, width=self.window_width, height=self.window_height, bg='black')
         self.field.place(x=0, y=0)
