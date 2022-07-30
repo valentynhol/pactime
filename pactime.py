@@ -1,324 +1,320 @@
-from tkinter import *
+from maps import classic
+
 import time
-
-x0=0
-y0=50
-z=20
-
-mode=0
-n=0
-a=[]
-
-dot=[]
-dot_num=0
-dot_score=0
-final_score=0
-pac_x=1
-pac_y=1
-pac_d=180
-pac_dd=180
-gameStartTime=0
-pauseStartTime=0
-pausesDuration=0
-maxGameDuration=0
-
-def mapInit():
-     globals()['dot']=[]
-     globals()['a'] =   [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                         [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-                         [1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1],
-                         [1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1],
-                         [1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1],
-                         [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-                         [1, 2, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 2, 1],
-                         [1, 2, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 2, 1],
-                         [1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 1],
-                         [1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1],
-                         [0, 0, 0, 0, 0, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 1, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 0, 0, 0, 0, 0],
-                         [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 0, 0, 0, 0, 0, 0, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1],
-                         [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-                         [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 0, 0, 0, 0, 0, 0, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1],
-                         [0, 0, 0, 0, 0, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 1, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 0, 0, 0, 0, 0],
-                         [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1],
-                         [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-                         [1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1],
-                         [1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1],
-                         [1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 1],
-                         [1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1],
-                         [1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1],
-                         [1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 1],
-                         [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1],
-                         [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1],
-                         [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
-                         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
-     
-     globals()['dot'] = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
-      #Стінки              
-     for r,row in enumerate(a, start=0):
-          for e,element in enumerate(row, start=0):
-               if globals()['a'][r][e] == 1:
-                    x=e*globals()['z']
-                    y=r*globals()['z']
-                    field.create_rectangle([x+globals()['x0'],y+globals()['y0']],[x+globals()['z']+globals()['x0'],y+globals()['z']+globals()['y0']],fill='purple')
-      #Точки              
-     for r,row in enumerate(a, start=0):
-          for e,element in enumerate(row, start=0):
-               if globals()['a'][r][e] == 2:
-                    x=e*globals()['z']
-                    y=r*globals()['z']             
-                    globals()['dot'][r][e] = field.create_rectangle([x+0.35*globals()['z']+globals()['x0'],y+0.35*globals()['z']+globals()['y0']],[x+0.55*globals()['z']+globals()['x0'],y+0.55*globals()['z']+globals()['y0']],fill='white')
-                    globals()['dot_num']+=1
-
-     globals()['gameStartTime'] = time.time()
-     globals()['pauseStartTime'] = 0
-     globals()['pausesDuration'] = 0
-     globals()['maxGameDuration'] = 150
+import copy
+import tkinter as tk
 
 
-def mainCycle():
-     time.sleep(0.03)
-          
-     if 0==globals()['mode']:
-          x = globals()['pac_x']
-          y = globals()['pac_y']
-          a = globals()['a']
-          dd = globals()['pac_dd']
-          pac_rot = False
-          zero = x%1 == 0 and y%1 == 0
-          
-          #Пам'ять
-          if dd==0 and a[int(y)][int(x-1)] != 1:
-               pac_rot = True
-          elif dd==90 and a[int(y+1)][int(x)] != 1:
-               pac_rot = True
-          elif dd==180 and a[int(y)][int(x+1)] != 1:
-               pac_rot = True
-          elif dd==270 and a[int(y-1)][int(x)] != 1:
-               pac_rot = True
-
-          #З'їдання точок
-          if zero and 2 == a[int(y)][int(x)]:
-               field.delete(globals()['dot'][int(y)][int(x)])
-               globals()['dot'][int(y)][int(x)] = 0
-               a[int(y)][int(x)] = 0
-               globals()['dot_score']+=1
-               globals()['final_score']+=10
-               globals()['dot_num']-=1
-               score.config(text='Рахунок: '+str(globals()['final_score']))
-               
-          #Пересування
-          if zero and pac_rot:
-               globals()['pac_d'] = globals()['pac_dd']
-               pac_rot = False
-          d = globals()['pac_d']
-               
-          if d==0:
-               if not zero or a[int(y)][int(x-1)] != 1:
-                    x=round(x-0.1, 1)
-          elif d==90:
-               if not zero or a[int(y+1)][int(x)] != 1:
-                    y=round(y+0.1, 1)
-          elif d==180:
-               if not zero or a[int(y)][int(x+1)] != 1:
-                    x=round(x+0.1, 1)
-          elif d==270:
-               if not zero or a[int(y-1)][int(x)] != 1:
-                    y=round(y-0.1, 1)
-
-          #Рот
-          globals()['n']+=1
-          n = globals()['n']
-          nn = n%10
-          if nn<5:
-              a = -280-nn*17
-          else:
-              a = -280-(9-nn)*17
-              
-          field.move(pac,(x-globals()['pac_x'])*globals()['z'],(y-globals()['pac_y'])*globals()['z'])
-          field.itemconfig(pac,start=globals()['pac_d']-a/2,extent=a)
-
-          globals()['pac_x'] = x
-          globals()['pac_y'] = y
-          
-          #Таймер
-          gameTime = globals()['maxGameDuration'] - (time.time() - globals()['gameStartTime'] - globals()['pausesDuration'])    
-
-          if gameTime < 0:
-               loseGame()
-          elif 0 == globals()['dot_num']:
-               winGame()
-          else:     
-               time_m = gameTime//60
-               time_s = gameTime%60
-               if 0==globals()['mode']:
-                    field.itemconfig(time_l, text='Час: '+str(int(time_m))+':'+str(round(time_s,1)))
+selected_map = classic
 
 
-            
+class Game:
+    field = None
+    game_map = None
+    pac = None
+    window = None
 
-def stopGame():
-     globals()['pauseStartTime'] = time.time()
-     showModal()
-     globals()['menu_1'] = field.create_text(275, 0.5*h, text='Меню,', fill='white')
-     globals()['menu_2'] = field.create_text(275, 0.5*h+20, text='Натисни "Esc", щоб продовжити', fill='white')
-     globals()['menu_3'] = field.create_text(275, 0.5*h+30, text='Натисни "Enter", щоб почати заново', fill='white')
-     globals()['mode']=2
-
-def continueGame():
-     field.delete(globals()['menu_1'])
-     field.delete(globals()['menu_2'])
-     field.delete(globals()['menu_3'])
-     hideModal()
-     globals()['mode']=0
-     globals()['pausesDuration']+=time.time()-globals()['pauseStartTime']
-     globals()['pauseStartTime'] = 0
+    window_height = 0
+    window_width = 0
+    offset_x = 5
+    offset_y = 50
+    cell_size = 20
     
-def winGame():
-     showModal()
-     final_win=field.create_text(275, 0.5*h, text='Ти виграв!!!', fill='white')
-     final_score_=field.create_text(275, 0.5*h+20, text='Твій рахунок: '+str(globals()['final_score']), fill='white')
-     globals()['mode']=2
+    game_mode = 0
+    score = 0
+    max_game_duration = 0
+    __modal_labels = []
 
-def loseGame():
-     showModal()
-     final=field.create_text(275, 0.5*h+20, text='Час вийшов!!!', fill='white')
-     globals()['mode']=2
+    dot_num = 0
+    __game_start_time = 0
+    __pause_start_time = 0
+    __pause_duration = 0
 
-def restartGame():
-     for r,row in enumerate(globals()['a'], start=0):
-          for e,element in enumerate(row, start=0):
-               if globals()['a'][r][e] == 2:
-                    field.delete(globals()['dot'][int(r)][int(e)])
-                    
-     mapInit()
-     field.delete(globals()['pac'])
-     field.delete(globals()['menu_1'])
-     field.delete(globals()['menu_2'])
-     field.delete(globals()['menu_3'])
-     globals()['pac']=field.create_arc([z+globals()['x0'],z+globals()['y0']],[z*2+globals()['x0'],z*2+globals()['y0']],fill='yellow',start=45,extent=-270)
-     globals()['time_']=150
-     globals()['dot_num']=0
-     globals()['dot_score']=0
-     globals()['final_score']=0
-     globals()['pac_x']=1
-     globals()['pac_y']=1
-     globals()['pac_d']=180
-     globals()['pac_dd']=180
-     globals()['mode']=0
-     hideModal()
+    __time_label = None
+    score_label = None
+
+    def __init__(self):
+        self.score = 0
+        self.game_mode = 0
+        self.game_map = copy.deepcopy(selected_map.game_map)
+        self.max_game_duration = selected_map.max_game_duration
+
+    def open_menu(self):
+        self.__pause_start_time = time.time()
+        self.__show_modal()
+
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 30, text='Menu', fill='white', font=('ArialBold', 18)))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 10, text='Press "Esc" to continue game', fill='white'))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 25, text='Press "Enter" tо restart game', fill='white'))
+
+        self.game_mode = 2
+
+    def win_game(self):
+        self.__show_modal()
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 30, text='You won!!!', fill='white', font=('ArialBold', 18)))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 5, text='Your score: ' + str(self.score), fill='white', font=('ArialBold', 13)))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 25, text='Press "Enter" tо restart game', fill='white'))
+        self.game_mode = 3
+
+    def lose_game(self):
+        self.__show_modal()
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 15, text="Time's up!!! \n Game over", fill='white', font=('ArialBold', 15)))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 25, text='Press "Enter" tо restart game', fill='white'))
+        self.game_mode = 3
+
+    def restart_game(self):
+        self.field.delete('all')
+        self.pac = None
+        self.game_map = None
+
+        self.score = 0
+        self.game_mode = 0
+        self.__game_start_time = time.time()
+
+        self.game_map = copy.deepcopy(selected_map.game_map)
+        self.map_init()
+
+        self.window.bind('<KeyPress>', self.pac.turn)
+        self.window.bind('<KeyRelease>', self.mode_change)
+
+    def start_pause(self):
+        self.__pause_start_time = time.time()
+        self.__show_modal()
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 30, text='Pause', fill='white', font=('ArialBold', 18)))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 17.5, text='Press "Pause" to continue game.', fill='white'))
+
+        self.game_mode = 1
+
+    def close_menu_or_pause(self):
+        self.__hide_modal()
+
+        self.game_mode = 0
+
+        self.__pause_duration += time.time() - self.__pause_start_time
+        self.__pause_start_time = 0
+
+    def __show_modal(self):
+        self.__modal_labels.append(self.field.create_rectangle([0.5*self.window_width - 125, 0.5*self.window_height - 50], [0.5*self.window_width + 125, 0.5*self.window_height + 50], fill='black', outline='purple'))
+
+    def __hide_modal(self):
+        self.__remove_modal_labels()
+
+    def __remove_modal_labels(self):
+        for index, label in enumerate(self.__modal_labels):
+            self.field.delete(label)
+
+        self.__modal_labels = []
+
+    def game_cycle(self):
+        time.sleep(0.03)
+
+        if 0 == self.game_mode:
+            self.pac.move()
+            self.pac.move_mouth()
+
+            game_time = self.max_game_duration - (
+                        time.time() - self.__game_start_time - self.__pause_duration)
+
+            if game_time < 0:
+                self.lose_game()
+            elif 0 == self.dot_num:
+                self.win_game()
+            else:
+                time_m = game_time // 60
+                time_s = game_time % 60
+                
+                if 0 == self.game_mode:
+                    self.__time_label.config(text='Time left: ' + str(int(time_m)) + ':' + str(round(time_s, 1)))
+
+    def mode_change(self, event):
+        key = event.keysym
+        if 0 == self.game_mode:
+            if key == 'Pause':
+                self.start_pause()
+            if key == 'Escape':
+                self.open_menu()
+        elif 1 == self.game_mode:
+            if key == 'Pause':
+                self.close_menu_or_pause()
+        elif 2 == self.game_mode:
+            if key == 'Return':
+                self.restart_game()
+            if key == 'Escape':
+                self.close_menu_or_pause()
+        elif 3 == self.game_mode:
+            if key == 'Return':
+                self.restart_game()
+
+    def map_init(self):
+        pac_created = False
+        for row_num, row in enumerate(self.game_map, start=0):
+            for cell_num, cell in enumerate(row, start=0):
+                x = cell_num * self.cell_size + self.offset_x
+                y = row_num * self.cell_size + self.offset_y
+
+                if self.game_map[row_num][cell_num] == '#':
+                    end_x = x + self.cell_size
+                    end_y = y + self.cell_size
+
+                    self.field.create_rectangle([x, y], [end_x, end_y], fill='purple')
+
+                elif self.game_map[row_num][cell_num] == '.':
+                    start_x = x + 0.35 * self.cell_size
+                    start_y = y + 0.35 * self.cell_size
+                    end_x = x + 0.55 * self.cell_size
+                    end_y = y + 0.55 * self.cell_size
+
+                    self.game_map[row_num][cell_num] = self.field.create_rectangle([start_x, start_y],
+                                                                                   [end_x, end_y], fill='white')
+                    self.dot_num += 1
+
+                elif self.game_map[row_num][cell_num] == 'p':
+                    graphic_pac_x = x
+                    graphic_pac_y = y
+                    pac_x = cell_num
+                    pac_y = row_num
+                    pac_created = True
+
+        if not pac_created:
+            raise MapGenerationError(
+                "Map has no pacman location specified!!! If you are the creator of this map, you should"
+                " set 'p' on map array to set pacman start location.")
+
+        graphic_obj = self.field.create_arc([graphic_pac_x, graphic_pac_y], [graphic_pac_x + self.cell_size, graphic_pac_y + self.cell_size], fill='yellow', start=45, extent=-270)
+        self.pac = Pac(self, pac_x, pac_y, graphic_obj)
+
+        if self.score_label and self.__time_label:
+            self.__time_label.destroy()
+            self.score_label.destroy()
+
+        self.score_label = tk.Label(text='Score: 0', fg='white', bg='black',
+                                    font=('ArialBold', int(0.3 * self.offset_y)))
+        self.__time_label = tk.Label(text='Time left: 0', fg='white', bg='black',
+                                     font=('ArialBold', int(0.3 * self.offset_y)))
+
+        self.score_label.place(x=self.offset_x + 40, y=0.25 * self.offset_y)
+        self.__time_label.place(x=self.window_width - 210, y=0.25 * self.offset_y)
+
+        tk.Label(text='"Pause" -- Pause', bg='black', fg='white', font='ArialBold ' + str(int(0.2 * self.offset_y))) \
+            .place(x=self.offset_x+10, y=self.window_height - 0.45 * self.offset_y)
+        tk.Label(text='Menu -- "Esc"', bg='black', fg='white', font='ArialBold ' + str(int(0.2 * self.offset_y))) \
+            .place(x=self.window_width - self.offset_x - 105, y=self.window_height - 0.45 * self.offset_y)
+
+    def window_init(self):
+        self.window_width = len(self.game_map[1])*self.cell_size + self.offset_x*2
+        self.window_height = len(self.game_map)*self.cell_size + self.offset_y + 25
+
+        self.window = tk.Tk()
+        self.window.title('Pactime')
+        self.window.geometry(str(self.window_width) + 'x' + str(self.window_height))
+
+        self.field = tk.Canvas(self.window, width=self.window_width, height=self.window_height, bg='black')
+        self.field.place(x=0, y=0)
+
+    def start(self):
+        self.window_init()
+        self.map_init()
+
+        self.window.bind('<KeyPress>', self.pac.turn)
+        self.window.bind('<KeyRelease>', self.mode_change)
+
+        self.__game_start_time = time.time()
+
+        while True:
+            self.window.update_idletasks()
+            self.window.update()
+            self.game_cycle()
 
 
-def startPause():
-     globals()['pauseStartTime'] = time.time()
-     showModal()
-     globals()['pause_1'] = field.create_text(275, 0.5*h, text='Пауза,', fill='white')
-     globals()['pause_2'] = field.create_text(275, 0.5*h+20, text='Натисни "Pause", щоб продовжити', fill='white')
-     globals()['mode']=1
-     
-def stopPause():
-     field.delete(globals()['pause_1'])
-     field.delete(globals()['pause_2'])
-     hideModal()
-     globals()['mode']=0
-     globals()['pausesDuration']+=time.time()-globals()['pauseStartTime']
-     globals()['pauseStartTime'] = 0
-     
-def showModal():
-     globals()['modal_bg'] = field.create_rectangle([100,190],[450,400],fill='black',outline='purple')
-     
-def hideModal():
-     field.delete(globals()['modal_bg'])
-     
-def turn(event):
-     if 0==globals()['mode']:
-          key=event.keysym
-          if key=='Left':
-               globals()['pac_dd'] = 0
-          if key=='Down':
-               globals()['pac_dd'] = 90
-          if key=='Right':
-               globals()['pac_dd'] = 180
-          if key=='Up':
-               globals()['pac_dd'] = 270
+class Pac:
+    x = 0
+    y = 0
+    mouth_phase = 0
+    direction = 180
+    next_direction = 180
+    graphic_obj = None
+    in_cell = True
+    game = None
+    
+    def __init__(self, game, x, y, graphic_obj):
+        self.game = game
+        self.x = x
+        self.y = y
+        self.graphic_obj = graphic_obj
+    
+    def move_mouth(self):
+        if self.mouth_phase < 5:
+            arc_size = -280 - self.mouth_phase * 17
+        else:
+            arc_size = -280 - (9 - self.mouth_phase) * 17
 
-     
+        if self.mouth_phase == 10:
+            self.mouth_phase = 0
 
-def modeChange(event):
-     key=event.keysym
-     if 0==globals()['mode']:
-          if key=='Pause':
-               startPause()
-          if key=='Escape':
-               stopGame()
-     elif 1==globals()['mode']:
-          if key=='Pause':
-               stopPause()
-     elif 2==globals()['mode']:
-          if key=='Return':
-               restartGame()
-          if key=='Escape':
-               continueGame()
-     
-pacman=Tk()
-h=28*z+x0
-w=31*z+y0+25
-pacman.title('Pacman')
-pacman.geometry(str(h)+'x'+str(w))
+        self.mouth_phase += 1
+
+        self.game.field.itemconfig(self.graphic_obj, start=self.direction - arc_size / 2, extent=arc_size)
+
+    def eat_dot(self):
+        if self.in_cell and self.game.game_map[int(self.y)][int(self.x)] not in ['p', '#', ' ']:
+            self.game.field.delete(self.game.game_map[int(self.y)][int(self.x)])
+            self.game.game_map[int(self.y)][int(self.x)] = ' '
+            self.game.score += 10
+            self.game.dot_num -= 1
+            self.game.score_label.config(text='Score: ' + str(self.game.score))
+
+    def turn(self, event):
+        if 0 == self.game.game_mode:
+            key = event.keysym
+            if key == 'Left':
+                self.next_direction = 0
+            if key == 'Down':
+                self.next_direction = 90
+            if key == 'Right':
+                self.next_direction = 180
+            if key == 'Up':
+                self.next_direction = 270
+    
+    def move(self):
+        self.in_cell = self.x % 1 == 0 and self.y % 1 == 0
+        self.eat_dot()
+
+        if self.in_cell:
+            if self.next_direction == 0 and self.game.game_map[int(self.y)][int(self.x - 1)] != '#':
+                self.direction = self.next_direction
+            elif self.next_direction == 90 and self.game.game_map[int(self.y + 1)][int(self.x)] != '#':
+                self.direction = self.next_direction
+            elif self.next_direction == 180 and self.game.game_map[int(self.y)][int(self.x + 1)] != '#':
+                self.direction = self.next_direction
+            elif self.next_direction == 270 and self.game.game_map[int(self.y - 1)][int(self.x)] != '#':
+                self.direction = self.next_direction
+
+        x_to_move = 0
+        y_to_move = 0
+
+        if self.direction == 0:
+            if not self.in_cell or self.game.game_map[int(self.y)][int(self.x-1)] != '#':
+                self.x = round(self.x-0.1, 1)
+                x_to_move = -0.1 * self.game.cell_size
+        elif self.direction == 90:
+            if not self.in_cell or self.game.game_map[int(self.y+1)][int(self.x)] != '#':
+                self.y = round(self.y+0.1, 1)
+                y_to_move = 0.1 * self.game.cell_size
+        elif self.direction == 180:
+            if not self.in_cell or self.game.game_map[int(self.y)][int(self.x+1)] != '#':
+                self.x = round(self.x+0.1, 1)
+                x_to_move = 0.1 * self.game.cell_size
+        elif self.direction == 270:
+            if not self.in_cell or self.game.game_map[int(self.y-1)][int(self.x)] != '#':
+                self.y = round(self.y-0.1, 1)
+                y_to_move = -0.1 * self.game.cell_size
+
+        self.game.field.move(self.graphic_obj, x_to_move, y_to_move)
 
 
-field=Canvas(pacman, width=h, height=w,bg='black')
-field.place(x=-1,y=0)
-mapInit()
-
-score=Label(text='Рахунок: 0', fg='white', bg='black', font='ArialBold '+str(int(0.3*y0)))
-score.place(x=x0+40,y=0.25*y0)
-time_l=field.create_text(w-x0-200, 0.5*y0, fill='white', font='ArialBold '+str(int(0.3*y0)))
-pauseLabel=Label(text='"Pause" -- Пауза', bg='black', fg='white', font='ArialBold '+str(int(0.2*y0)))
-pauseLabel.place(x=0.25*y0,y=w-0.45*y0)
-pauseLabel=Label(text='Меню -- "Esc"', bg='black', fg='white', font='ArialBold '+str(int(0.2*y0)))
-pauseLabel.place(x=h-2*y0,y=w-0.45*y0)
-
-pac=field.create_arc([z+globals()['x0'],z+globals()['y0']],[z*2+globals()['x0'],z*2+globals()['y0']],fill='yellow',start=45,extent=-270)
-
-pacman.bind('<KeyPress>',turn)
-pacman.bind('<KeyRelease>',modeChange)
+class MapGenerationError(Exception):
+    pass
 
 
-while True:
-    pacman.update_idletasks()
-    pacman.update()
-    mainCycle()
+game = Game()
+game.start()
