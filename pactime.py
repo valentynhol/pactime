@@ -1,11 +1,13 @@
-from maps import classic
-
-import time
+import os
 import copy
+import json
+import time
+import random
+
 import tkinter as tk
 
-
-selected_map = classic
+with open('./maps/' + random.choice(os.listdir('./maps'))) as map_file:
+    selected_map = json.load(map_file)
 
 
 class Game:
@@ -16,7 +18,7 @@ class Game:
 
     window_height = 0
     window_width = 0
-    offset_x = 5
+    offset_x = 0
     offset_y = 50
     cell_size = 20
     
@@ -36,30 +38,40 @@ class Game:
     def __init__(self):
         self.score = 0
         self.game_mode = 0
-        self.game_map = copy.deepcopy(selected_map.game_map)
-        self.max_game_duration = selected_map.max_game_duration
+        self.game_map = copy.deepcopy(selected_map['gameMap'])
+        self.max_game_duration = selected_map['maxGameDuration']
 
     def open_menu(self):
         self.__pause_start_time = time.time()
         self.__show_modal()
 
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 30, text='Menu', fill='white', font=('ArialBold', 18)))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 10, text='Press "Esc" to continue game', fill='white'))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 25, text='Press "Enter" tо restart game', fill='white'))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 30,
+                                                          text='Menu', fill='white', font=('ArialBold', 18)))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 10,
+                                                          text='Press "Esc" to continue game', fill='white'))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 25,
+                                                          text='Press "Enter" tо restart game', fill='white'))
 
         self.game_mode = 2
 
     def win_game(self):
         self.__show_modal()
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 30, text='You won!!!', fill='white', font=('ArialBold', 18)))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 5, text='Your score: ' + str(self.score), fill='white', font=('ArialBold', 13)))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 25, text='Press "Enter" tо restart game', fill='white'))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 30,
+                                                          text='You won!!!', fill='white', font=('ArialBold', 18)))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 5,
+                                                          text='Your score: ' + str(self.score), fill='white',
+                                                          font=('ArialBold', 13)))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 25,
+                                                          text='Press "Enter" tо restart game', fill='white'))
         self.game_mode = 3
 
     def lose_game(self):
         self.__show_modal()
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 15, text="Time's up!!! \n Game over", fill='white', font=('ArialBold', 15)))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 25, text='Press "Enter" tо restart game', fill='white'))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 15,
+                                                          text="Time's up!!! \n Game over", fill='white',
+                                                          font=('ArialBold', 15)))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 25,
+                                                          text='Press "Enter" tо restart game', fill='white'))
         self.game_mode = 3
 
     def restart_game(self):
@@ -71,7 +83,7 @@ class Game:
         self.game_mode = 0
         self.__game_start_time = time.time()
 
-        self.game_map = copy.deepcopy(selected_map.game_map)
+        self.game_map = copy.deepcopy(selected_map['gameMap'])
         self.map_init()
 
         self.window.bind('<KeyPress>', self.pac.turn)
@@ -80,8 +92,10 @@ class Game:
     def start_pause(self):
         self.__pause_start_time = time.time()
         self.__show_modal()
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 30, text='Pause', fill='white', font=('ArialBold', 18)))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 17.5, text='Press "Pause" to continue game.', fill='white'))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 30,
+                                                          text='Pause', fill='white', font=('ArialBold', 18)))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 17.5,
+                                                          text='Press "Pause" to continue game.', fill='white'))
 
         self.game_mode = 1
 
@@ -94,7 +108,11 @@ class Game:
         self.__pause_start_time = 0
 
     def __show_modal(self):
-        self.__modal_labels.append(self.field.create_rectangle([0.5*self.window_width - 125, 0.5*self.window_height - 50], [0.5*self.window_width + 125, 0.5*self.window_height + 50], fill='black', outline='purple'))
+        self.__modal_labels.append(self.field.create_rectangle([0.5*self.window_width - 125,
+                                                                0.5*self.window_height - 50],
+                                                               [0.5*self.window_width + 125,
+                                                                0.5*self.window_height + 50],
+                                                               fill='black', outline='purple'))
 
     def __hide_modal(self):
         self.__remove_modal_labels()
@@ -118,6 +136,7 @@ class Game:
             if game_time < 0:
                 self.lose_game()
             elif 0 == self.dot_num:
+                self.score += round(game_time * 1000)
                 self.win_game()
             else:
                 time_m = game_time // 60
@@ -147,10 +166,15 @@ class Game:
 
     def map_init(self):
         pac_created = False
+        graphic_pac_x = 0
+        graphic_pac_y = 0
+        pac_x = 0
+        pac_y = 0
+
         for row_num, row in enumerate(self.game_map, start=0):
             for cell_num, cell in enumerate(row, start=0):
-                x = cell_num * self.cell_size + self.offset_x
-                y = row_num * self.cell_size + self.offset_y
+                x = cell_num * self.cell_size + self.offset_x + 0.25*self.cell_size
+                y = row_num * self.cell_size + self.offset_y + 0.25*self.cell_size
 
                 if self.game_map[row_num][cell_num] == '#':
                     end_x = x + self.cell_size
@@ -180,8 +204,14 @@ class Game:
                 "Map has no pacman location specified!!! If you are the creator of this map, you should"
                 " set 'p' on map array to set pacman start location.")
 
-        graphic_obj = self.field.create_arc([graphic_pac_x, graphic_pac_y], [graphic_pac_x + self.cell_size, graphic_pac_y + self.cell_size], fill='yellow', start=45, extent=-270)
+        graphic_obj = self.field.create_arc([graphic_pac_x, graphic_pac_y],
+                                            [graphic_pac_x + self.cell_size, graphic_pac_y + self.cell_size],
+                                            fill='yellow', start=45, extent=-270)
         self.pac = Pac(self, pac_x, pac_y, graphic_obj)
+
+        self.field.create_rectangle([0, 0], [self.window_width + 1, self.offset_y], fill='black', outline='purple')
+        self.field.create_rectangle([0, self.window_height - 25], [self.window_width + 1, self.window_height],
+                                    fill='black', outline='purple')
 
         if self.score_label and self.__time_label:
             self.__time_label.destroy()
@@ -201,13 +231,14 @@ class Game:
             .place(x=self.window_width - self.offset_x - 105, y=self.window_height - 0.45 * self.offset_y)
 
     def window_init(self):
-        self.window_width = len(self.game_map[1])*self.cell_size + self.offset_x*2
-        self.window_height = len(self.game_map)*self.cell_size + self.offset_y + 25
+        self.window_width = len(self.game_map[1])*self.cell_size + self.offset_x*2 + int(0.5*self.cell_size)
+        self.window_height = len(self.game_map)*self.cell_size + self.offset_y + 25 + int(0.5*self.cell_size)
 
         self.window = tk.Tk()
         self.window.title('Pactime')
         self.window.geometry(str(self.window_width) + 'x' + str(self.window_height))
         self.window.iconphoto(False, tk.PhotoImage(file='icon.png'))
+        self.window.resizable(False, False)
 
         self.field = tk.Canvas(self.window, width=self.window_width, height=self.window_height, bg='black')
         self.field.place(x=0, y=0)
@@ -257,12 +288,13 @@ class Pac:
         self.game.field.itemconfig(self.graphic_obj, start=self.direction - arc_size / 2, extent=arc_size)
 
     def eat_dot(self):
-        if self.in_cell and self.game.game_map[int(self.y)][int(self.x)] not in ['p', '#', ' ']:
-            self.game.field.delete(self.game.game_map[int(self.y)][int(self.x)])
-            self.game.game_map[int(self.y)][int(self.x)] = ' '
-            self.game.score += 10
-            self.game.dot_num -= 1
-            self.game.score_label.config(text='Score: ' + str(self.game.score))
+        if 0 <= self.x <= len(self.game.game_map[0]) - 1 and 0 <= self.y <= len(self.game.game_map) - 1:
+            if self.in_cell and self.game.game_map[int(self.y)][int(self.x)] not in ['p', '#', ' ']:
+                self.game.field.delete(self.game.game_map[int(self.y)][int(self.x)])
+                self.game.game_map[int(self.y)][int(self.x)] = ' '
+                self.game.score += 10
+                self.game.dot_num -= 1
+                self.game.score_label.config(text='Score: ' + str(self.game.score))
 
     def turn(self, event):
         if 0 == self.game.game_mode:
@@ -281,32 +313,82 @@ class Pac:
         self.eat_dot()
 
         if self.in_cell:
-            if self.next_direction == 0 and self.game.game_map[int(self.y)][int(self.x - 1)] != '#':
-                self.direction = self.next_direction
-            elif self.next_direction == 90 and self.game.game_map[int(self.y + 1)][int(self.x)] != '#':
-                self.direction = self.next_direction
-            elif self.next_direction == 180 and self.game.game_map[int(self.y)][int(self.x + 1)] != '#':
-                self.direction = self.next_direction
-            elif self.next_direction == 270 and self.game.game_map[int(self.y - 1)][int(self.x)] != '#':
-                self.direction = self.next_direction
+            if 0 <= self.x <= len(self.game.game_map[0]) - 1 and 0 <= self.y <= len(self.game.game_map) - 1:
+                if self.next_direction == 0:
+                    if self.x == 0:
+                        if self.game.game_map[int(self.y)][len(self.game.game_map[0])-1] != '#':
+                            self.direction = self.next_direction
+                    elif self.x < 0:
+                        pass
+                    elif self.game.game_map[int(self.y)][int(self.x - 1)] != '#':
+                        self.direction = self.next_direction
+                elif self.next_direction == 90:
+                    if self.y == len(self.game.game_map) - 1:
+                        if self.game.game_map[0][int(self.x)] != '#':
+                            self.direction = self.next_direction
+                    elif self.y > len(self.game.game_map) - 1:
+                        pass
+                    elif self.game.game_map[int(self.y + 1)][int(self.x)] != '#':
+                        self.direction = self.next_direction
+                elif self.next_direction == 180:
+                    if self.x == len(self.game.game_map[0]) - 1:
+                        if self.game.game_map[int(self.y)][0] != '#':
+                            self.direction = self.next_direction
+                    elif self.x > len(self.game.game_map[0]) - 1:
+                        pass
+                    elif self.game.game_map[int(self.y)][int(self.x + 1)] != '#':
+                        self.direction = self.next_direction
+                elif self.next_direction == 270:
+                    if self.y == 0:
+                        if self.game.game_map[len(self.game.game_map)-1][int(self.x)] != '#':
+                            self.direction = self.next_direction
+                    elif self.y < 0:
+                        pass
+                    elif self.game.game_map[int(self.y - 1)][int(self.x)] != '#':
+                        self.direction = self.next_direction
 
         x_to_move = 0
         y_to_move = 0
 
         if self.direction == 0:
-            if not self.in_cell or self.game.game_map[int(self.y)][int(self.x-1)] != '#':
-                self.x = round(self.x-0.1, 1)
-                x_to_move = -0.1 * self.game.cell_size
+            if self.x <= -0.9 and self.game.game_map[int(self.y)][len(self.game.game_map[0])-1] != '#':
+                self.x = self.x + len(self.game.game_map[0]) + 1
+                x_to_move = (len(self.game.game_map[0]) + 1) * self.game.cell_size
+            else:
+                if not self.in_cell or self.game.game_map[int(self.y)][int(self.x-1)] != '#':
+                    self.x = round(self.x-0.1, 1)
+                    x_to_move = -0.1 * self.game.cell_size
         elif self.direction == 90:
-            if not self.in_cell or self.game.game_map[int(self.y+1)][int(self.x)] != '#':
-                self.y = round(self.y+0.1, 1)
-                y_to_move = 0.1 * self.game.cell_size
+            if self.y >= len(self.game.game_map) - 1:
+                if self.game.game_map[0][int(self.x)] != '#':
+                    if self.y >= len(self.game.game_map) - 0.1:
+                        self.y = self.y - len(self.game.game_map) - 1
+                        y_to_move = - (len(self.game.game_map) + 1)*self.game.cell_size
+                    else:
+                        self.y = round(self.y + 0.1, 1)
+                        y_to_move = 0.1 * self.game.cell_size
+            else:
+                if not self.in_cell or self.game.game_map[int(self.y+1)][int(self.x)] != '#':
+                    self.y = round(self.y+0.1, 1)
+                    y_to_move = 0.1 * self.game.cell_size
         elif self.direction == 180:
-            if not self.in_cell or self.game.game_map[int(self.y)][int(self.x+1)] != '#':
-                self.x = round(self.x+0.1, 1)
-                x_to_move = 0.1 * self.game.cell_size
+            if self.x >= len(self.game.game_map[0]) - 1:
+                if self.game.game_map[int(self.y)][0] != '#':
+                    if self.x >= len(self.game.game_map[0]) - 0.1:
+                        self.x = self.x - len(self.game.game_map[0]) - 1
+                        x_to_move = - (len(self.game.game_map[0]) + 1)*self.game.cell_size
+                    else:
+                        self.x = round(self.x + 0.1, 1)
+                        x_to_move = 0.1 * self.game.cell_size
+            else:
+                if not self.in_cell or self.game.game_map[int(self.y)][int(self.x+1)] != '#':
+                    self.x = round(self.x+0.1, 1)
+                    x_to_move = 0.1 * self.game.cell_size
         elif self.direction == 270:
-            if not self.in_cell or self.game.game_map[int(self.y-1)][int(self.x)] != '#':
+            if self.y <= -0.9 and self.game.game_map[len(self.game.game_map) - 1][int(self.x)] != '#':
+                self.y = self.y + len(self.game.game_map) + 1
+                y_to_move = (len(self.game.game_map) + 1) * self.game.cell_size
+            elif not self.in_cell or self.game.game_map[int(self.y-1)][int(self.x)] != '#':
                 self.y = round(self.y-0.1, 1)
                 y_to_move = -0.1 * self.game.cell_size
 
