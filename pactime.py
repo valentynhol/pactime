@@ -23,9 +23,9 @@ class Game:
     map_height = 0
     offset_x = 0
     offset_y = 0
-    cell_size = 20
+    cell_size = 0
     
-    game_mode = 0
+    process = 'game'
     score = 0
     dot_num = 0
     
@@ -41,7 +41,7 @@ class Game:
 
     def __init__(self, game_map, max_game_duration):
         self.score = 0
-        self.game_mode = 0
+        self.process = 'game'
         self.game_map = copy.deepcopy(game_map)
         self.max_game_duration = max_game_duration
 
@@ -56,7 +56,7 @@ class Game:
         self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 25,
                                                           text='Press "Enter" tо restart game', fill='white'))
 
-        self.game_mode = 2
+        self.process = 'menu'
 
     def win_game(self):
         self.__show_modal()
@@ -67,7 +67,7 @@ class Game:
                                                           font=('ArialBold', 13)))
         self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 25,
                                                           text='Press "Enter" tо restart game', fill='white'))
-        self.game_mode = 3
+        self.process = 'game ended'
 
     def lose_game(self):
         self.__show_modal()
@@ -76,7 +76,7 @@ class Game:
                                                           font=('ArialBold', 15)))
         self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 25,
                                                           text='Press "Enter" tо restart game', fill='white'))
-        self.game_mode = 3
+        self.process = 'game ended'
 
     def restart_game(self):
         self.field.delete('all')
@@ -84,7 +84,7 @@ class Game:
         self.game_map = None
 
         self.score = 0
-        self.game_mode = 0
+        self.process = 'game'
         self.__game_start_time = time.time()
 
         self.game_map = copy.deepcopy(selected_map['gameMap'])
@@ -93,20 +93,10 @@ class Game:
         self.window.bind('<KeyPress>', self.pac.turn)
         self.window.bind('<KeyRelease>', self.mode_change)
 
-    def start_pause(self):
-        self.__pause_start_time = time.time()
-        self.__show_modal()
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 30,
-                                                          text='Pause', fill='white', font=('ArialBold', 18)))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 17.5,
-                                                          text='Press "Pause" to continue game.', fill='white'))
-
-        self.game_mode = 1
-
-    def close_menu_or_pause(self):
+    def close_menu(self):
         self.__hide_modal()
 
-        self.game_mode = 0
+        self.process = 'game'
 
         self.__pause_duration += time.time() - self.__pause_start_time
         self.__pause_start_time = 0
@@ -130,7 +120,7 @@ class Game:
     def game_cycle(self):
         time.sleep(0.03)
 
-        if 0 == self.game_mode:
+        if self.process == 'game':
             self.pac.move()
             self.pac.move_mouth()
 
@@ -146,26 +136,21 @@ class Game:
                 time_m = game_time // 60
                 time_s = game_time % 60
                 
-                if 0 == self.game_mode:
+                if self.process == 'game':
                     self.field.itemconfig(self.__time_label,
                                           text='Time left: ' + str(int(time_m)) + ':' + str(round(time_s, 1)))
 
     def mode_change(self, event):
         key = event.keysym
-        if 0 == self.game_mode:
-            if key == 'Pause':
-                self.start_pause()
+        if self.process == 'game':
             if key == 'Escape':
                 self.open_menu()
-        elif 1 == self.game_mode:
-            if key == 'Pause':
-                self.close_menu_or_pause()
-        elif 2 == self.game_mode:
+        elif self.process == 'menu':
             if key == 'Return':
                 self.restart_game()
             if key == 'Escape':
-                self.close_menu_or_pause()
-        elif 3 == self.game_mode:
+                self.close_menu()
+        elif self.process == 'game ended':
             if key == 'Return':
                 self.restart_game()
 
@@ -214,27 +199,25 @@ class Game:
                                             fill='yellow', start=45, extent=-270)
         self.pac = Pac(self, pac_x, pac_y, graphic_obj)
 
-        self.field.create_rectangle([self.offset_x - self.cell_size + 10, self.offset_y - self.cell_size + 10],
+        self.field.create_rectangle([self.offset_x - 0.5*self.cell_size, self.offset_y - 0.5*self.cell_size],
                                     [self.offset_x + self.map_width + self.cell_size,
                                      self.offset_y + self.map_height + self.cell_size],
-                                    outline='black', width=self.cell_size)
+                                    outline='white', width=self.cell_size)
 
-        self.field.create_rectangle([0, 0], [self.window_width + 1, 50], fill='black', outline='purple')
-        self.field.create_rectangle([0, self.window_height - 25], [self.window_width + 1, self.window_height + 1],
+        self.field.create_rectangle([0, 0], [self.window_width + 1, self.window_height/20], fill='black', outline='purple')
+        self.field.create_rectangle([0, self.window_height - self.window_height/40], [self.window_width + 1, self.window_height + 1],
                                     fill='black', outline='purple')
 
-        self.score_label = self.field.create_text(40, 25, text='Score: 0', fill='white', font=('ArialBold', 17),
-                                                  anchor='w')
+        self.score_label = self.field.create_text(40, self.window_height/40, text='Score: 0', fill='white',
+                                                  font=('ArialBold', self.window_height//50), anchor='w')
 
-        self.__time_label = self.field.create_text(self.window_width - 40, 25,
+        self.__time_label = self.field.create_text(self.window_width - 40, self.window_height/40,
                                                    text='Time left: ' + str(self.max_game_duration // 60) + ':' +
                                                         str(float(self.max_game_duration % 60)),
-                                                   fill='white', font=('ArialBold', 17), anchor='e')
+                                                   fill='white', font=('ArialBold', self.window_height//50), anchor='e')
 
-        self.field.create_text(10, self.window_height - 12.5, text='"Pause" -- Pause', fill='white',
-                               font=('ArialBold', 10), anchor='w')
-        self.field.create_text(self.window_width - 10, self.window_height - 12.5, text='Menu -- "Esc"', fill='white',
-                               font=('ArialBold', 10), anchor='e')
+        self.field.create_text(self.window_width/2, self.window_height - self.window_height/80, text='Menu -- "Esc"',
+                               fill='white', font=('ArialBold', self.window_height//90), anchor='center')
 
     def window_init(self):
         self.window = tk.Tk(className='pactime')
@@ -242,8 +225,12 @@ class Game:
 
         self.window_width = self.window.winfo_screenwidth()
         self.window_height = self.window.winfo_screenheight()
-        self.map_width = len(self.game_map[1])*self.cell_size + self.offset_x*2
-        self.map_height = len(self.game_map)*self.cell_size + self.offset_y
+
+        self.cell_size = (self.window_height*18/20) / len(self.game_map)
+
+        self.map_width = len(self.game_map[1])*self.cell_size
+        self.map_height = len(self.game_map)*self.cell_size
+
         self.offset_x = 0.5 * (self.window_width - self.map_width)
         self.offset_y = 0.5 * (self.window_height - self.map_height)
 
@@ -310,7 +297,7 @@ class Pac:
                 self.game.field.itemconfig(self.game.score_label, text='Score: ' + str(self.game.score))
 
     def turn(self, event):
-        if 0 == self.game.game_mode:
+        if self.game.process == 'game':
             key = event.keysym
             if key == 'Left':
                 self.next_direction = 0
@@ -364,9 +351,9 @@ class Pac:
         y_to_move = 0
 
         if self.direction == 0:
-            if self.x <= -0.9 and self.game.game_map[int(self.y)][len(self.game.game_map[0])-1] != '#':
-                self.x = self.x + len(self.game.game_map[0]) + 1
-                x_to_move = (len(self.game.game_map[0]) + 1) * self.game.cell_size
+            if self.x <= -1.3 and self.game.game_map[int(self.y)][len(self.game.game_map[0])-1] != '#':
+                self.x = self.x + len(self.game.game_map[0]) + 2
+                x_to_move = (len(self.game.game_map[0]) + 2) * self.game.cell_size
             else:
                 if not self.in_cell or self.game.game_map[int(self.y)][int(self.x-1)] != '#':
                     self.x = round(self.x-0.1, 1)
@@ -374,9 +361,9 @@ class Pac:
         elif self.direction == 90:
             if self.y >= len(self.game.game_map) - 1:
                 if self.game.game_map[0][int(self.x)] != '#':
-                    if self.y >= len(self.game.game_map) - 0.1:
-                        self.y = self.y - len(self.game.game_map) - 1
-                        y_to_move = - (len(self.game.game_map) + 1)*self.game.cell_size
+                    if self.y >= len(self.game.game_map) + 0.3:
+                        self.y = self.y - len(self.game.game_map) - 2
+                        y_to_move = - (len(self.game.game_map) + 2)*self.game.cell_size
                     else:
                         self.y = round(self.y + 0.1, 1)
                         y_to_move = 0.1 * self.game.cell_size
@@ -387,9 +374,9 @@ class Pac:
         elif self.direction == 180:
             if self.x >= len(self.game.game_map[0]) - 1:
                 if self.game.game_map[int(self.y)][0] != '#':
-                    if self.x >= len(self.game.game_map[0]) - 0.1:
-                        self.x = self.x - len(self.game.game_map[0]) - 1
-                        x_to_move = - (len(self.game.game_map[0]) + 1)*self.game.cell_size
+                    if self.x >= len(self.game.game_map[0]) + 0.3:
+                        self.x = self.x - len(self.game.game_map[0]) - 2
+                        x_to_move = - (len(self.game.game_map[0]) + 2)*self.game.cell_size
                     else:
                         self.x = round(self.x + 0.1, 1)
                         x_to_move = 0.1 * self.game.cell_size
@@ -398,9 +385,9 @@ class Pac:
                     self.x = round(self.x+0.1, 1)
                     x_to_move = 0.1 * self.game.cell_size
         elif self.direction == 270:
-            if self.y <= -0.9 and self.game.game_map[len(self.game.game_map) - 1][int(self.x)] != '#':
-                self.y = self.y + len(self.game.game_map) + 1
-                y_to_move = (len(self.game.game_map) + 1) * self.game.cell_size
+            if self.y <= -1.3 and self.game.game_map[len(self.game.game_map) - 1][int(self.x)] != '#':
+                self.y = self.y + len(self.game.game_map) + 2
+                y_to_move = (len(self.game.game_map) + 2) * self.game.cell_size
             elif not self.in_cell or self.game.game_map[int(self.y-1)][int(self.x)] != '#':
                 self.y = round(self.y-0.1, 1)
                 y_to_move = -0.1 * self.game.cell_size
@@ -412,8 +399,10 @@ class MapGenerationError(Exception):
     pass
 
 
-with open('./maps/' + random.choice(os.listdir('./maps'))) as map_file:
+"""with open('./maps/' + random.choice(os.listdir('./maps'))) as map_file:
     selected_map = json.load(map_file)
-
+"""
+with open("./maps/tp_test.json") as mp:
+    selected_map = json.load(mp)
 game = Game(selected_map['gameMap'], selected_map['maxGameDuration'])
 game.start()
