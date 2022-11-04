@@ -6,8 +6,9 @@ import random
 
 import tkinter as tk
 
-with open('./maps/' + random.choice(os.listdir('./maps'))) as map_file:
-    selected_map = json.load(map_file)
+
+class MainMenu:
+    pass
 
 
 class Game:
@@ -18,28 +19,31 @@ class Game:
 
     window_height = 0
     window_width = 0
+    map_width = 0
+    map_height = 0
     offset_x = 0
-    offset_y = 50
+    offset_y = 0
     cell_size = 20
     
     game_mode = 0
     score = 0
-    max_game_duration = 0
-    __modal_labels = []
-
     dot_num = 0
+    
+    max_game_duration = 0
+
     __game_start_time = 0
     __pause_start_time = 0
     __pause_duration = 0
+    __modal_labels = []
 
     __time_label = None
     score_label = None
 
-    def __init__(self):
+    def __init__(self, game_map, max_game_duration):
         self.score = 0
         self.game_mode = 0
-        self.game_map = copy.deepcopy(selected_map['gameMap'])
-        self.max_game_duration = selected_map['maxGameDuration']
+        self.game_map = copy.deepcopy(game_map)
+        self.max_game_duration = max_game_duration
 
     def open_menu(self):
         self.__pause_start_time = time.time()
@@ -143,7 +147,8 @@ class Game:
                 time_s = game_time % 60
                 
                 if 0 == self.game_mode:
-                    self.__time_label.config(text='Time left: ' + str(int(time_m)) + ':' + str(round(time_s, 1)))
+                    self.field.itemconfig(self.__time_label,
+                                          text='Time left: ' + str(int(time_m)) + ':' + str(round(time_s, 1)))
 
     def mode_change(self, event):
         key = event.keysym
@@ -209,39 +214,47 @@ class Game:
                                             fill='yellow', start=45, extent=-270)
         self.pac = Pac(self, pac_x, pac_y, graphic_obj)
 
-        self.field.create_rectangle([0, 0], [self.window_width + 1, self.offset_y], fill='black', outline='purple')
-        self.field.create_rectangle([0, self.window_height - 25], [self.window_width + 1, self.window_height],
+        self.field.create_rectangle([self.offset_x - self.cell_size + 10, self.offset_y - self.cell_size + 10],
+                                    [self.offset_x + self.map_width + self.cell_size,
+                                     self.offset_y + self.map_height + self.cell_size],
+                                    outline='black', width=self.cell_size)
+
+        self.field.create_rectangle([0, 0], [self.window_width + 1, 50], fill='black', outline='purple')
+        self.field.create_rectangle([0, self.window_height - 25], [self.window_width + 1, self.window_height + 1],
                                     fill='black', outline='purple')
 
-        if self.score_label and self.__time_label:
-            self.__time_label.destroy()
-            self.score_label.destroy()
+        self.score_label = self.field.create_text(40, 25, text='Score: 0', fill='white', font=('ArialBold', 17),
+                                                  anchor='w')
 
-        self.score_label = tk.Label(text='Score: 0', fg='white', bg='black',
-                                    font=('ArialBold', int(0.3 * self.offset_y)))
-        self.__time_label = tk.Label(text='Time left: 0', fg='white', bg='black',
-                                     font=('ArialBold', int(0.3 * self.offset_y)))
+        self.__time_label = self.field.create_text(self.window_width - 40, 25,
+                                                   text='Time left: ' + str(self.max_game_duration // 60) + ':' +
+                                                        str(float(self.max_game_duration % 60)),
+                                                   fill='white', font=('ArialBold', 17), anchor='e')
 
-        self.score_label.place(x=self.offset_x + 40, y=0.25 * self.offset_y)
-        self.__time_label.place(x=self.window_width - 210, y=0.25 * self.offset_y)
-
-        tk.Label(text='"Pause" -- Pause', bg='black', fg='white', font='ArialBold ' + str(int(0.2 * self.offset_y))) \
-            .place(x=self.offset_x+10, y=self.window_height - 0.45 * self.offset_y)
-        tk.Label(text='Menu -- "Esc"', bg='black', fg='white', font='ArialBold ' + str(int(0.2 * self.offset_y))) \
-            .place(x=self.window_width - self.offset_x - 105, y=self.window_height - 0.45 * self.offset_y)
+        self.field.create_text(10, self.window_height - 12.5, text='"Pause" -- Pause', fill='white',
+                               font=('ArialBold', 10), anchor='w')
+        self.field.create_text(self.window_width - 10, self.window_height - 12.5, text='Menu -- "Esc"', fill='white',
+                               font=('ArialBold', 10), anchor='e')
 
     def window_init(self):
-        self.window_width = len(self.game_map[1])*self.cell_size + self.offset_x*2 + int(0.5*self.cell_size)
-        self.window_height = len(self.game_map)*self.cell_size + self.offset_y + 25 + int(0.5*self.cell_size)
+        self.window = tk.Tk(className='pactime')
+        self.window.title('PacTime')
 
-        self.window = tk.Tk()
-        self.window.title('Pactime')
+        self.window_width = self.window.winfo_screenwidth()
+        self.window_height = self.window.winfo_screenheight()
+        self.map_width = len(self.game_map[1])*self.cell_size + self.offset_x*2
+        self.map_height = len(self.game_map)*self.cell_size + self.offset_y
+        self.offset_x = 0.5 * (self.window_width - self.map_width)
+        self.offset_y = 0.5 * (self.window_height - self.map_height)
+
         self.window.geometry(str(self.window_width) + 'x' + str(self.window_height))
-        self.window.iconphoto(False, tk.PhotoImage(file='icon.png'))
+        self.window.attributes('-fullscreen', True)
+
+        self.window.iconphoto(True, tk.PhotoImage(file='images/icon.png'))
         self.window.resizable(False, False)
 
         self.field = tk.Canvas(self.window, width=self.window_width, height=self.window_height, bg='black')
-        self.field.place(x=0, y=0)
+        self.field.place(x=-1, y=-1)
 
     def start(self):
         self.window_init()
@@ -294,7 +307,7 @@ class Pac:
                 self.game.game_map[int(self.y)][int(self.x)] = ' '
                 self.game.score += 10
                 self.game.dot_num -= 1
-                self.game.score_label.config(text='Score: ' + str(self.game.score))
+                self.game.field.itemconfig(self.game.score_label, text='Score: ' + str(self.game.score))
 
     def turn(self, event):
         if 0 == self.game.game_mode:
@@ -399,5 +412,8 @@ class MapGenerationError(Exception):
     pass
 
 
-game = Game()
+with open('./maps/' + random.choice(os.listdir('./maps'))) as map_file:
+    selected_map = json.load(map_file)
+
+game = Game(selected_map['gameMap'], selected_map['maxGameDuration'])
 game.start()
