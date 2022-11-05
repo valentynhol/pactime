@@ -91,7 +91,7 @@ class Game:
         self.map_init()
 
         self.window.bind('<KeyPress>', self.pac.turn)
-        self.window.bind('<KeyRelease>', self.mode_change)
+        self.window.bind('<KeyRelease>', self.process_change)
 
     def close_menu(self):
         self.__hide_modal()
@@ -140,7 +140,7 @@ class Game:
                     self.field.itemconfig(self.__time_label,
                                           text='Time left: ' + str(int(time_m)) + ':' + str(round(time_s, 1)))
 
-    def mode_change(self, event):
+    def process_change(self, event):
         key = event.keysym
         if self.process == 'game':
             if key == 'Escape':
@@ -199,13 +199,15 @@ class Game:
                                             fill='yellow', start=45, extent=-270)
         self.pac = Pac(self, pac_x, pac_y, graphic_obj)
 
-        self.field.create_rectangle([self.offset_x - 0.5*self.cell_size, self.offset_y - 0.5*self.cell_size],
+        self.field.create_rectangle([self.offset_x - self.cell_size, self.offset_y - self.cell_size],
                                     [self.offset_x + self.map_width + self.cell_size,
-                                     self.offset_y + self.map_height + self.cell_size],
-                                    outline='white', width=self.cell_size)
+                                     self.offset_y + self.map_height + self.cell_size + 1],
+                                    outline='black', width=self.cell_size*2)
 
-        self.field.create_rectangle([0, 0], [self.window_width + 1, self.window_height/20], fill='black', outline='purple')
-        self.field.create_rectangle([0, self.window_height - self.window_height/40], [self.window_width + 1, self.window_height + 1],
+        self.field.create_rectangle([0, 0], [self.window_width + 1, self.window_height/20], fill='black',
+                                    outline='purple')
+        self.field.create_rectangle([0, self.window_height - self.window_height/40],
+                                    [self.window_width + 1, self.window_height + 1],
                                     fill='black', outline='purple')
 
         self.score_label = self.field.create_text(40, self.window_height/40, text='Score: 0', fill='white',
@@ -226,13 +228,14 @@ class Game:
         self.window_width = self.window.winfo_screenwidth()
         self.window_height = self.window.winfo_screenheight()
 
-        self.cell_size = (self.window_height*18/20) / len(self.game_map)
+        self.cell_size = min((self.window_height*32/40) / len(self.game_map),
+                             (self.window_width*35/40) / len(self.game_map[0]), 40)
 
-        self.map_width = len(self.game_map[1])*self.cell_size
-        self.map_height = len(self.game_map)*self.cell_size
+        self.map_width = len(self.game_map[0])*self.cell_size + 0.5*self.cell_size
+        self.map_height = len(self.game_map)*self.cell_size + 0.5*self.cell_size
 
         self.offset_x = 0.5 * (self.window_width - self.map_width)
-        self.offset_y = 0.5 * (self.window_height - self.map_height)
+        self.offset_y = 0.5 * (1.025*self.window_height - self.map_height)
 
         self.window.geometry(str(self.window_width) + 'x' + str(self.window_height))
         self.window.attributes('-fullscreen', True)
@@ -248,7 +251,7 @@ class Game:
         self.map_init()
 
         self.window.bind('<KeyPress>', self.pac.turn)
-        self.window.bind('<KeyRelease>', self.mode_change)
+        self.window.bind('<KeyRelease>', self.process_change)
 
         self.__game_start_time = time.time()
 
@@ -399,10 +402,8 @@ class MapGenerationError(Exception):
     pass
 
 
-"""with open('./maps/' + random.choice(os.listdir('./maps'))) as map_file:
+with open('./maps/' + random.choice(os.listdir('./maps'))) as map_file:
     selected_map = json.load(map_file)
-"""
-with open("./maps/tp_test.json") as mp:
-    selected_map = json.load(mp)
+
 game = Game(selected_map['gameMap'], selected_map['maxGameDuration'])
 game.start()
