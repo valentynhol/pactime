@@ -173,10 +173,10 @@ class Game:
                     self.field.create_rectangle([x, y], [end_x, end_y], fill='purple')
 
                 elif self.game_map[row_num][cell_num] == '.':
-                    start_x = x + 0.35 * self.cell_size
-                    start_y = y + 0.35 * self.cell_size
-                    end_x = x + 0.55 * self.cell_size
-                    end_y = y + 0.55 * self.cell_size
+                    start_x = x + 0.41*self.cell_size
+                    start_y = y + 0.41*self.cell_size
+                    end_x = x + 0.59*self.cell_size
+                    end_y = y + 0.59*self.cell_size
 
                     self.game_map[row_num][cell_num] = self.field.create_rectangle([start_x, start_y],
                                                                                    [end_x, end_y], fill='white')
@@ -228,8 +228,8 @@ class Game:
         self.window_width = self.window.winfo_screenwidth()
         self.window_height = self.window.winfo_screenheight()
 
-        self.cell_size = min((self.window_height*32/40) / len(self.game_map),
-                             (self.window_width*35/40) / len(self.game_map[0]), 40)
+        self.cell_size = min((self.window_height*32/40) // len(self.game_map),
+                             (self.window_width*35/40) // len(self.game_map[0]), 40)
 
         self.map_width = len(self.game_map[0])*self.cell_size + 0.5*self.cell_size
         self.map_height = len(self.game_map)*self.cell_size + 0.5*self.cell_size
