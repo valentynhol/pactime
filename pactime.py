@@ -225,8 +225,10 @@ class Game:
         self.window = tk.Tk(className='pactime')
         self.window.title('PacTime')
 
-        self.window_width = self.window.winfo_screenwidth()
-        self.window_height = self.window.winfo_screenheight()
+        self.window.attributes('-fullscreen', True)
+        self.window.update()
+        self.window_width = self.window.winfo_width()
+        self.window_height = self.window.winfo_height()
 
         self.cell_size = min((self.window_height*32/40) // len(self.game_map),
                              (self.window_width*35/40) // len(self.game_map[0]), 40)
@@ -237,11 +239,7 @@ class Game:
         self.offset_x = 0.5 * (self.window_width - self.map_width)
         self.offset_y = 0.5 * (1.025*self.window_height - self.map_height)
 
-        self.window.geometry(str(self.window_width) + 'x' + str(self.window_height))
-        self.window.attributes('-fullscreen', True)
-
         self.window.iconphoto(True, tk.PhotoImage(file='images/icon.png'))
-        self.window.resizable(False, False)
 
         self.field = tk.Canvas(self.window, width=self.window_width, height=self.window_height, bg='black')
         self.field.place(x=-1, y=-1)
