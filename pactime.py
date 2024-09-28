@@ -102,10 +102,10 @@ class Game:
         self.__pause_start_time = 0
 
     def __show_modal(self):
-        self.__modal_labels.append(self.field.create_rectangle([0.5*self.window_width - 125,
-                                                                0.5*self.window_height - 50],
-                                                               [0.5*self.window_width + 125,
-                                                                0.5*self.window_height + 50],
+        self.__modal_labels.append(self.field.create_rectangle((0.5*self.window_width - 125,
+                                                                0.5*self.window_height - 50),
+                                                               (0.5*self.window_width + 125,
+                                                                0.5*self.window_height + 50),
                                                                fill='black', outline='purple'))
 
     def __hide_modal(self):
@@ -170,7 +170,7 @@ class Game:
                     end_x = x + self.cell_size
                     end_y = y + self.cell_size
 
-                    self.field.create_rectangle([x, y], [end_x, end_y], fill='purple')
+                    self.field.create_rectangle((x, y), (end_x, end_y), fill='purple')
 
                 elif self.game_map[row_num][cell_num] == '.':
                     start_x = x + 0.41*self.cell_size
@@ -178,8 +178,8 @@ class Game:
                     end_x = x + 0.59*self.cell_size
                     end_y = y + 0.59*self.cell_size
 
-                    self.game_map[row_num][cell_num] = self.field.create_rectangle([start_x, start_y],
-                                                                                   [end_x, end_y], fill='white')
+                    self.game_map[row_num][cell_num] = self.field.create_rectangle((start_x, start_y),
+                                                                                   (end_x, end_y), fill='white')
                     self.dot_num += 1
 
                 elif self.game_map[row_num][cell_num] == 'p':
@@ -199,15 +199,15 @@ class Game:
                                             fill='yellow', start=45, extent=-270)
         self.pac = Pac(self, pac_x, pac_y, graphic_obj)
 
-        self.field.create_rectangle([self.offset_x - self.cell_size, self.offset_y - self.cell_size],
-                                    [self.offset_x + self.map_width + self.cell_size,
-                                     self.offset_y + self.map_height + self.cell_size + 1],
+        self.field.create_rectangle((self.offset_x - self.cell_size, self.offset_y - self.cell_size),
+                                    (self.offset_x + self.map_width + self.cell_size,
+                                     self.offset_y + self.map_height + self.cell_size + 1),
                                     outline='black', width=self.cell_size*2)
 
-        self.field.create_rectangle([0, 0], [self.window_width + 1, self.window_height/20], fill='black',
+        self.field.create_rectangle((0, 0), (self.window_width + 1, self.window_height/20), fill='black',
                                     outline='purple')
-        self.field.create_rectangle([0, self.window_height - self.window_height/40],
-                                    [self.window_width + 1, self.window_height + 1],
+        self.field.create_rectangle((0, self.window_height - self.window_height/40),
+                                    (self.window_width + 1, self.window_height + 1),
                                     fill='black', outline='purple')
 
         self.score_label = self.field.create_text(40, self.window_height/40, text='Score: 0', fill='white',
@@ -269,8 +269,8 @@ class Pac:
     in_cell = True
     game = None
     
-    def __init__(self, game, x, y, graphic_obj):
-        self.game = game
+    def __init__(self, game_object, x, y, graphic_obj):
+        self.game = game_object
         self.x = x
         self.y = y
         self.graphic_obj = graphic_obj
