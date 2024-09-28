@@ -49,33 +49,38 @@ class Game:
         self.__pause_start_time = time.time()
         self.__show_modal()
 
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 30,
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.455 * self.window_height,
                                                           text='Menu', fill='white', font=('ArialBold', 18)))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 10,
-                                                          text='Press "Esc" to continue game', fill='white'))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 25,
-                                                          text='Press "Enter" tо restart game', fill='white'))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.53 * self.window_height,
+                                                          text='Press "Esc" to continue game', fill='white',
+                                                          font=('Arial', int(0.005 * self.window_height))))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.55 * self.window_height,
+                                                          text='Press "Enter" tо restart game', fill='white',
+                                                          font=('Arial', int(0.005 * self.window_height))))
 
         self.process = 'menu'
 
     def win_game(self):
         self.__show_modal()
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 30,
-                                                          text='You won!!!', fill='white', font=('ArialBold', 18)))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 5,
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.455 * self.window_height,
+                                                          text='You won!!!', fill='white',
+                                                          font=('ArialBold', int(0.01 * self.window_height))))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.485 * self.window_height,
                                                           text='Your score: ' + str(self.score), fill='white',
-                                                          font=('ArialBold', 13)))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 25,
-                                                          text='Press "Enter" tо restart game', fill='white'))
+                                                          font=('ArialBold', int(0.008 * self.window_height))))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.55 * self.window_height,
+                                                          text='Press "Enter" tо restart game', fill='white',
+                                                          font=('Arial', int(0.005 * self.window_height))))
         self.process = 'game ended'
 
     def lose_game(self):
         self.__show_modal()
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height - 15,
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.475 * self.window_height,
                                                           text="Time's up!!! \n Game over", fill='white',
-                                                          font=('ArialBold', 15)))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.5*self.window_height + 25,
-                                                          text='Press "Enter" tо restart game', fill='white'))
+                                                          font=('ArialBold', int(0.01 * self.window_height))))
+        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.55 * self.window_height,
+                                                          text='Press "Enter" tо restart game', fill='white',
+                                                          font=('Arial', int(0.005 * self.window_height))))
         self.process = 'game ended'
 
     def restart_game(self):
@@ -102,10 +107,10 @@ class Game:
         self.__pause_start_time = 0
 
     def __show_modal(self):
-        self.__modal_labels.append(self.field.create_rectangle((0.5*self.window_width - 125,
-                                                                0.5*self.window_height - 50),
-                                                               (0.5*self.window_width + 125,
-                                                                0.5*self.window_height + 50),
+        self.__modal_labels.append(self.field.create_rectangle((0.35*self.window_width,
+                                                                0.4*self.window_height),
+                                                               (0.65*self.window_width,
+                                                                0.6*self.window_height),
                                                                fill='black', outline='purple'))
 
     def __hide_modal(self):
@@ -218,7 +223,7 @@ class Game:
                                                         str(float(self.max_game_duration % 60)),
                                                    fill='white', font=('ArialBold', self.window_height//50), anchor='e')
 
-        self.field.create_text(self.window_width/2, self.window_height - self.window_height/80, text='Menu -- "Esc"',
+        self.field.create_text(self.window_width/2, self.window_height - self.window_height/110, text='Menu -- "Esc"',
                                fill='white', font=('ArialBold', self.window_height//90), anchor='center')
 
     def window_init(self):
