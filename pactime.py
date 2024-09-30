@@ -29,6 +29,8 @@ class MainMenu:
         self.open_menu()
 
     def open_menu(self):
+        self.menu_canvas = tk.Canvas(self.window, width=self.window_width, height=self.window_height, bg='black')
+        self.menu_canvas.place(x=-1, y=-1)
         self.__create_menu_gui()
 
         while self.window:
@@ -245,9 +247,6 @@ class MainMenu:
 
         self.window.protocol("WM_DELETE_WINDOW", self.__quit)
 
-        self.menu_canvas = tk.Canvas(self.window, width=self.window_width, height=self.window_height, bg='black')
-        self.menu_canvas.place(x=-1, y=-1)
-
 
 class Game:
     main_menu = None
@@ -319,6 +318,9 @@ class Game:
 
         self.main_menu.window.bind('<KeyPress>', self.pac.turn)
         self.main_menu.window.bind('<KeyRelease>', self.__process_change)
+
+    def __close_game(self):
+        self.field.destroy()
 
     def __open_menu(self):
         self.__pause_start_time = time.time()
@@ -414,6 +416,9 @@ class Game:
                 self.restart_game()
             if key == 'Escape':
                 self.__close_menu()
+            if key == 'BackSpace':
+                self.__close_game()
+                self.main_menu.open_menu()
         elif self.process == 'game ended':
             if key == 'Return':
                 self.restart_game()
