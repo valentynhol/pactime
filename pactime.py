@@ -35,16 +35,22 @@ class MainMenu:
 
         while self.window:
             try:
-                time.sleep(0.01)
-                self.__menu_animation()
+                try:
+                    time.sleep(0.01)
+                    try:
+                        self.__menu_animation()
+                    except tk.TclError:
+                        pass
 
-                for btn in list(self.menu_buttons.keys()):
-                    self.__btn_animation(btn, 'menu')
+                    for btn in list(self.menu_buttons.keys()):
+                        self.__btn_animation(btn, 'menu')
 
-                self.window.update_idletasks()
-                self.window.update()
-            except AttributeError and tk.TclError:
-                pass
+                    self.window.update_idletasks()
+                    self.window.update()
+                except AttributeError and tk.TclError:
+                    pass
+            except KeyboardInterrupt:
+                exit()
 
     def close_menu(self):
         self.menu_canvas.destroy()
@@ -80,7 +86,7 @@ class MainMenu:
                 elif cycle <= 17:
                     self.menu_buttons[btn].config(font=('Arial', self.window_height // 30 + 3 - (cycle - 14), 'bold'))
                 elif cycle == 18:
-                    self.menu_buttons[btn].config(cursor='hand1', bg='black', fg='purple')
+                    self.menu_buttons[btn].config(cursor='hand2', bg='black', fg='purple')
             elif btn_type == 'map_select':
                 if cycle == 1:
                     self.menu_buttons[btn].config(cursor='watch', bg='purple', fg='black')
@@ -89,7 +95,7 @@ class MainMenu:
                 elif cycle <= 17:
                     self.menu_buttons[btn].config(font=('Arial', self.window_height // 30 + 3 - (cycle - 14), 'bold'))
                 elif cycle == 18:
-                    self.menu_buttons[btn].config(cursor='hand1', bg='black', fg='purple')
+                    self.menu_buttons[btn].config(cursor='hand2', bg='black', fg='purple')
 
             self.menu_btn_cycles[btn] += 1
         if cycle == 19:
@@ -105,22 +111,22 @@ class MainMenu:
         self.__menu_animation_constructor()
         self.menu_buttons['play'] = tk.Button(self.menu_canvas, text='Play', fg='purple', bg='black', relief='flat',
                                               activebackground='purple', activeforeground='black', width=15,
-                                              highlightthickness=5, highlightbackground='purple', cursor='hand1',
+                                              highlightthickness=5, highlightbackground='purple', cursor='hand2',
                                               font=('Arial', self.window_height // 30, 'bold'),
                                               command=self.__select_map)
         self.menu_buttons['options'] = tk.Button(self.menu_canvas, text='Options', fg='purple', bg='black',
                                                  relief='flat', activebackground='purple', activeforeground='black',
                                                  width=15, highlightthickness=5, highlightbackground='purple',
-                                                 cursor='hand1', font=('Arial', self.window_height // 30, 'bold'),
+                                                 cursor='hand2', font=('Arial', self.window_height // 30, 'bold'),
                                                  command=self.__options)
         self.menu_buttons['how_to_play'] = tk.Button(self.menu_canvas, text='How to play', fg='purple', bg='black',
                                                      relief='flat', activebackground='purple', activeforeground='black',
                                                      width=15, highlightthickness=5, highlightbackground='purple',
-                                                     cursor='hand1', font=('Arial', self.window_height // 30, 'bold'),
+                                                     cursor='hand2', font=('Arial', self.window_height // 30, 'bold'),
                                                      command=self.__how_to_play)
         self.menu_buttons['quit'] = tk.Button(self.menu_canvas, text='Quit', fg='purple', bg='black', relief='flat',
                                               activebackground='purple', activeforeground='black', width=15,
-                                              highlightthickness=5, highlightbackground='purple', cursor='hand1',
+                                              highlightthickness=5, highlightbackground='purple', cursor='hand2',
                                               font=('Arial', self.window_height // 30, 'bold'), command=self.__quit)
 
         self.menu_buttons['play'].place(x=0.5 * self.window_width, y=15 / 30 * self.window_height, anchor='center')
@@ -181,6 +187,7 @@ class MainMenu:
     def __select_map(self):
         for btn in self.menu_buttons.values():
             btn.destroy()
+        self.menu_buttons = {}
 
         self.animation['frame'].destroy()
 
@@ -215,22 +222,19 @@ class MainMenu:
             with open('./maps/' + game_map) as map_file:
                 map_json = json.load(map_file)
                 self.map_btns[map_json['name']] = tk.Button(self.map_selector['inner_frame'], text=map_json['name'],
-                                                            font=('Arial',
-                                                                  int(self.map_selector['canvas'].winfo_height() / 15),
-                                                                  'bold'),
-                                                            width=int(
-                                                                0.9 * self.map_selector['inner_frame'].winfo_width()),
-                                                            fg='purple', bg='black', relief='flat', cursor='hand1',
+                                                    font=('Arial', int(self.map_selector['canvas'].winfo_height() / 15),
+                                                          'bold'),
+                                                    width=int(0.9 * self.map_selector['inner_frame'].winfo_width()),
+                                                            fg='purple', bg='black', relief='flat', cursor='hand2',
                                                             activebackground='purple', activeforeground='black',
-                                                            highlightthickness=5, highlightbackground='purple')
+                                                            highlightthickness=5, highlightbackground='purple',
+                                                    command=game_map)
 
-                self.map_btns[map_json['name']].pack(side='top',
-                                                     pady=int(self.map_selector['canvas'].winfo_height() / 60),
-                                                     padx=int(self.map_selector['canvas'].winfo_width() / 40))
+            self.map_btns[map_json['name']].pack(side='top',
+                                                 pady=int(self.map_selector['canvas'].winfo_height() / 60),
+                                                 padx=int(self.map_selector['canvas'].winfo_width() / 40))
 
-                self.map_btns[map_json['name']].bind('<Button-1>', self.__play(game_map))
-
-        self.window.update_idletasks()
+            self.map_btns[map_json['name']].bind('<Button-1>', lambda event: self.__play(event.widget.cget('command')))
 
         self.map_selector['canvas'].config(scrollregion=(self.map_selector['canvas'].bbox('all')))
 
@@ -385,26 +389,28 @@ class Game:
         self.__modal_labels = []
 
     def __game_cycle(self):
-        time.sleep(0.03)
+        try:
+            time.sleep(0.03)
+            if self.process == 'game':
+                self.pac.move()
 
-        if self.process == 'game':
-            self.pac.move()
+                game_time = self.max_game_duration - (
+                            time.time() - self.__game_start_time - self.__pause_duration)
 
-            game_time = self.max_game_duration - (
-                        time.time() - self.__game_start_time - self.__pause_duration)
+                if game_time < 0:
+                    self.__lost_game()
+                elif 0 == self.dot_num:
+                    self.score += round(game_time * 1000)
+                    self.__won_game()
+                else:
+                    time_m = game_time // 60
+                    time_s = game_time % 60
 
-            if game_time < 0:
-                self.__lost_game()
-            elif 0 == self.dot_num:
-                self.score += round(game_time * 1000)
-                self.__won_game()
-            else:
-                time_m = game_time // 60
-                time_s = game_time % 60
-                
-                if self.process == 'game':
-                    self.field.itemconfig(self.__time_label,
-                                          text='Time left: ' + str(int(time_m)) + ':' + str(round(time_s, 1)))
+                    if self.process == 'game':
+                        self.field.itemconfig(self.__time_label,
+                                              text='Time left: ' + str(int(time_m)) + ':' + str(round(time_s, 1)))
+        except KeyboardInterrupt:
+            exit()
 
     def __process_change(self, event):
         key = event.keysym
