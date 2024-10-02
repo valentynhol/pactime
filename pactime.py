@@ -610,7 +610,7 @@ class Pac:
             if self.x <= -1.3 and self.game.game_map[int(self.y)][len(self.game.game_map[0]) - 1] != '#':
                 self.x = self.x + len(self.game.game_map[0]) + 2
                 x_to_move = (len(self.game.game_map[0]) + 2) * self.game.cell_size
-            elif not self.in_cell or self.game.game_map[int(self.y)][int(self.x - 1)] != '#':
+            elif self.x <= -1 or not self.in_cell or self.game.game_map[int(self.y)][int(self.x - 1)] != '#':
                 self.x = round(self.x - 0.1, 1)
                 x_to_move = -0.1 * self.game.cell_size
         elif self.direction == 90:
@@ -641,7 +641,7 @@ class Pac:
             if self.y <= -1.3 and self.game.game_map[len(self.game.game_map) - 1][int(self.x)] != '#':
                 self.y = self.y + len(self.game.game_map) + 2
                 y_to_move = (len(self.game.game_map) + 2) * self.game.cell_size
-            elif not self.in_cell or self.game.game_map[int(self.y - 1)][int(self.x)] != '#':
+            elif self.y <= -1 or not self.in_cell or self.game.game_map[int(self.y - 1)][int(self.x)] != '#':
                 self.y = round(self.y - 0.1, 1)
                 y_to_move = -0.1 * self.game.cell_size
 
