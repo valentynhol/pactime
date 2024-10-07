@@ -237,8 +237,20 @@ class MainMenu:
             self.map_btns[game_map].bind('<Button-1>', lambda event: self.__play(event.widget.cget('command')))
 
         self.window.update_idletasks()
-
         self.map_selector['canvas'].config(scrollregion=(self.map_selector['canvas'].bbox('all')))
+
+        # Scroll for Windows
+        # NOT TESTED
+        self.map_selector['inner_frame'].bind_all('<MouseWheel>', lambda event: self.map_selector['canvas'].yview_scroll(
+                                                                -1 if event.num==4 else 1 if event.num==5 else 0, 'units'))
+
+        # Scroll for Linux
+        self.map_selector['inner_frame'].bind_all('<Button-4>', lambda event: self.map_selector['canvas'].yview_scroll(
+                                                              -1, 'units'))
+        self.map_selector['inner_frame'].bind_all('<Button-5>', lambda event: self.map_selector['canvas'].yview_scroll(
+                                                              1, 'units'))
+
+        self.window.update_idletasks()
 
     def __window_init(self):
         self.window = tk.Tk(className='pactime')
