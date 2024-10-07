@@ -16,7 +16,6 @@ class MainMenu:
     window_height = 0
 
     menu_buttons = {}
-    menu_btn_cycles = {'play': None, 'options': None, 'how_to_play': None, 'quit': None}
     animation = {}
     map_selector = {}
     map_btns = {}
@@ -108,6 +107,7 @@ class MainMenu:
                 btn_name = list(self.menu_buttons.keys())[list(self.menu_buttons.values()).index(event.widget)]
                 self.menu_btn_cycles[btn_name] = 1
 
+        self.menu_btn_cycles = {'play': None, 'options': None, 'how_to_play': None, 'quit': None}
         self.__menu_animation_constructor()
         self.menu_buttons['play'] = tk.Button(self.menu_canvas, text='Play', fg='purple', bg='black', relief='flat',
                                               activebackground='purple', activeforeground='black', width=15,
@@ -221,20 +221,22 @@ class MainMenu:
         for num, game_map in enumerate(self.maps):
             with open('./maps/' + game_map) as map_file:
                 map_json = json.load(map_file)
-                self.map_btns[map_json['name']] = tk.Button(self.map_selector['inner_frame'], text=map_json['name'],
+                self.map_btns[game_map] = tk.Button(self.map_selector['inner_frame'], text=map_json['name'],
                                                     font=('Arial', int(self.map_selector['canvas'].winfo_height() / 15),
                                                           'bold'),
                                                     width=int(0.9 * self.map_selector['inner_frame'].winfo_width()),
-                                                            fg='purple', bg='black', relief='flat', cursor='hand2',
-                                                            activebackground='purple', activeforeground='black',
-                                                            highlightthickness=5, highlightbackground='purple',
+                                                    fg='purple', bg='black', relief='flat', cursor='hand2',
+                                                    activebackground='purple', activeforeground='black',
+                                                    highlightthickness=5, highlightbackground='purple',
                                                     command=game_map)
 
-            self.map_btns[map_json['name']].pack(side='top',
-                                                 pady=int(self.map_selector['canvas'].winfo_height() / 60),
-                                                 padx=int(self.map_selector['canvas'].winfo_width() / 40))
+            self.map_btns[game_map].pack(side='top',
+                                         pady=int(self.map_selector['canvas'].winfo_height() / 60),
+                                         padx=int(self.map_selector['canvas'].winfo_width() / 40))
 
-            self.map_btns[map_json['name']].bind('<Button-1>', lambda event: self.__play(event.widget.cget('command')))
+            self.map_btns[game_map].bind('<Button-1>', lambda event: self.__play(event.widget.cget('command')))
+
+        self.window.update_idletasks()
 
         self.map_selector['canvas'].config(scrollregion=(self.map_selector['canvas'].bbox('all')))
 
