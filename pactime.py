@@ -136,7 +136,7 @@ class MainMenu:
                                                anchor='center')
         self.menu_buttons['quit'].place(x=0.5 * self.window_width, y=27 / 30 * self.window_height, anchor='center')
 
-        self.window.bind('<Button-1>', __click)
+        self.menu_canvas.bind_all('<Button-1>', __click)
 
     def __menu_animation_constructor(self):
         self.animation['height'] = self.window_height // 9
@@ -305,12 +305,13 @@ class Game:
         self.__map_local_copy = game_map
         self.game_map = copy.deepcopy(self.__map_local_copy)
         self.max_game_duration = max_game_duration
+        self.__modal_labels = []
 
     def start(self):
         self.__map_init()
 
-        self.main_menu.window.bind('<KeyPress>', self.pac.turn)
-        self.main_menu.window.bind('<KeyRelease>', self.__process_change)
+        self.field.bind_all('<KeyPress>', self.pac.turn)
+        self.field.bind_all('<KeyRelease>', self.__process_change)
 
         self.__game_start_time = time.time()
 
@@ -334,11 +335,13 @@ class Game:
         self.game_map = copy.deepcopy(self.__map_local_copy)
         self.__map_init()
 
-        self.main_menu.window.bind('<KeyPress>', self.pac.turn)
-        self.main_menu.window.bind('<KeyRelease>', self.__process_change)
+        self.field.bind_all('<KeyPress>', self.pac.turn)
+        self.field.bind_all('<KeyRelease>', self.__process_change)
 
     def __close_game(self):
         self.field.destroy()
+        self.main_menu.window.update_idletasks()
+        self.field = None
 
     def __open_menu(self):
         self.__pause_start_time = time.time()
@@ -379,12 +382,13 @@ class Game:
         self.process = 'game ended'
 
     def __close_menu(self):
-        self.__hide_modal()
+        if self.field:
+            self.__hide_modal()
 
-        self.process = 'game'
+            self.process = 'game'
 
-        self.__pause_duration += time.time() - self.__pause_start_time
-        self.__pause_start_time = 0
+            self.__pause_duration += time.time() - self.__pause_start_time
+            self.__pause_start_time = 0
 
     def __show_modal(self):
         self.__modal_labels.append(self.field.create_rectangle((0.35*self.window_width,
@@ -427,21 +431,23 @@ class Game:
             exit()
 
     def __process_change(self, event):
-        key = event.keysym
-        if self.process == 'game':
-            if key == 'Escape':
-                self.__open_menu()
-        elif self.process == 'menu':
-            if key == 'Return':
-                self.restart_game()
-            if key == 'Escape':
-                self.__close_menu()
-            if key == 'BackSpace':
-                self.__close_game()
-                self.main_menu.open_menu()
-        elif self.process == 'game ended':
-            if key == 'Return':
-                self.restart_game()
+        if self.field:
+            key = event.keysym
+            if self.process == 'game':
+                if key == 'Escape':
+                    self.__open_menu()
+            elif self.process == 'menu':
+                if key == 'Return':
+                    self.restart_game()
+                if key == 'Escape':
+                    self.__close_menu()
+                if key == 'BackSpace':
+                    self.__close_game()
+                    self.main_menu.open_menu()
+                    del self
+            elif self.process == 'game ended':
+                if key == 'Return':
+                    self.restart_game()
 
     def __map_init(self):
         self.window_height = self.main_menu.window_height
