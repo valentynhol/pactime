@@ -7,6 +7,7 @@ import random
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox
+from xml.dom.pulldom import parse
 
 
 class MainMenu:
@@ -223,9 +224,17 @@ class MainMenu:
         self.map_selector['inner_frame'] = tk.Frame(self.map_selector['canvas'], highlightbackground='purple',
                                                     highlightthickness=3, bg='black')
 
-        self.map_selector['scrollbar'] = ttk.Scrollbar(self.map_selector['frame'], orient='vertical', cursor='hand1')
-        self.map_selector['scrollbar'].pack(side='right', fill='y')
+        style = ttk.Style()
+        style.layout('Custom.Vertical.TScrollbar',
+                     [('Vertical.Scrollbar.trough', {'sticky': 'ns', 'children':
+                           [('Vertical.Scrollbar.thumb', {'sticky': 'nswe'})]})])
+        style.configure('Custom.Vertical.TScrollbar', width=int(0.01 * self.window_width),
+                        arrowsize=int(0.01 * self.window_width), troughcolor='black', outline='purple', borderwidth=0)
+        style.map('Custom.Vertical.TScrollbar', background=[('', 'purple')])
 
+        self.map_selector['scrollbar'] = ttk.Scrollbar(self.map_selector['frame'], orient='vertical', cursor='hand1',
+                                                       style='Custom.Vertical.TScrollbar')
+        self.map_selector['scrollbar'].pack(side='right', fill='y', padx=5, pady=5)
         self.map_selector['canvas'].config(yscrollcommand=self.map_selector['scrollbar'].set)
         self.map_selector['scrollbar'].config(command=self.map_selector['canvas'].yview)
 
