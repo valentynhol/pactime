@@ -19,6 +19,7 @@ class MainMenu:
     animation = {}
     map_selector = {}
     map_btns = {}
+    map_btn_cycles = {}
 
     maps = os.listdir('./maps')
 
@@ -43,6 +44,8 @@ class MainMenu:
 
                     for btn in list(self.menu_buttons.keys()):
                         self.__btn_animation(btn, 'menu')
+                    for btn in list(self.map_btns.keys()):
+                        self.__btn_animation(btn, 'map_select')
 
                     self.window.update_idletasks()
                     self.window.update()
@@ -75,18 +78,9 @@ class MainMenu:
             self.window = None
 
     def __btn_animation(self, btn, btn_type=None):
-        cycle = self.menu_btn_cycles[btn]
-        if cycle:
-            if btn_type == 'menu':
-                if cycle == 1:
-                    self.menu_buttons[btn].config(cursor='watch', bg='purple', fg='black')
-                elif cycle <= 13:
-                    self.menu_buttons[btn].config(font=('Arial', self.window_height // 30 - (cycle - 7), 'bold'))
-                elif cycle <= 17:
-                    self.menu_buttons[btn].config(font=('Arial', self.window_height // 30 + 3 - (cycle - 14), 'bold'))
-                elif cycle == 18:
-                    self.menu_buttons[btn].config(cursor='hand2', bg='black', fg='purple')
-            elif btn_type == 'map_select':
+        if btn_type == 'menu':
+            cycle = self.menu_btn_cycles[btn]
+            if cycle:
                 if cycle == 1:
                     self.menu_buttons[btn].config(cursor='watch', bg='purple', fg='black')
                 elif cycle <= 13:
@@ -96,9 +90,28 @@ class MainMenu:
                 elif cycle == 18:
                     self.menu_buttons[btn].config(cursor='hand2', bg='black', fg='purple')
 
-            self.menu_btn_cycles[btn] += 1
-        if cycle == 19:
-            self.menu_btn_cycles[btn] = None
+                self.menu_btn_cycles[btn] += 1
+
+            if cycle == 19:
+                self.menu_btn_cycles[btn] = None
+
+        elif btn_type == 'map_select':
+            cycle = self.map_btn_cycles[btn]
+            if cycle:
+                if cycle == 1:
+                    self.map_btns[btn].config(cursor='watch', bg='purple', fg='black')
+                elif cycle <= 13:
+                    self.map_btns[btn].config(font=('Arial', int(self.map_selector['canvas'].winfo_height() / 15) - (cycle - 7), 'bold'))
+                elif cycle <= 17:
+                    self.map_btns[btn].config(font=('Arial', int(self.map_selector['canvas'].winfo_height() / 15) + 3 - (cycle - 14), 'bold'))
+                elif cycle == 18:
+                    self.map_btns[btn].config(cursor='hand2', bg='black', fg='purple')
+
+                self.map_btn_cycles[btn] += 1
+
+            if cycle == 19:
+                self.map_btn_cycles[btn] = None
+                self.__play(btn)
 
     def __create_menu_gui(self):
         def __click(event):
@@ -185,6 +198,12 @@ class MainMenu:
         self.window.update()
 
     def __select_map(self):
+        def __click(event):
+            if event.widget in self.map_btns.values():
+                event.widget.config(relief='flat')
+                btn_name = list(self.map_btns.keys())[list(self.map_btns.values()).index(event.widget)]
+                self.map_btn_cycles[btn_name] = 1
+
         for btn in self.menu_buttons.values():
             btn.destroy()
         self.menu_buttons = {}
@@ -227,14 +246,15 @@ class MainMenu:
                                                     width=int(0.9 * self.map_selector['inner_frame'].winfo_width()),
                                                     fg='purple', bg='black', relief='flat', cursor='hand2',
                                                     activebackground='purple', activeforeground='black',
-                                                    highlightthickness=5, highlightbackground='purple',
-                                                    command=game_map)
+                                                    highlightthickness=5, highlightbackground='purple')
+                self.map_btn_cycles[game_map] = None
+
 
             self.map_btns[game_map].pack(side='top',
                                          pady=int(self.map_selector['canvas'].winfo_height() / 60),
                                          padx=int(self.map_selector['canvas'].winfo_width() / 40))
 
-            self.map_btns[game_map].bind('<Button-1>', lambda event: self.__play(event.widget.cget('command')))
+            self.map_btns[game_map].bind('<Button-1>', __click)
 
         self.window.update_idletasks()
         self.map_selector['canvas'].config(scrollregion=(self.map_selector['canvas'].bbox('all')))
@@ -391,10 +411,8 @@ class Game:
             self.__pause_start_time = 0
 
     def __show_modal(self):
-        self.__modal_labels.append(self.field.create_rectangle((0.35*self.window_width,
-                                                                0.4*self.window_height),
-                                                               (0.65*self.window_width,
-                                                                0.6*self.window_height),
+        self.__modal_labels.append(self.field.create_rectangle((0.35*self.window_width, 0.4*self.window_height),
+                                                               (0.65*self.window_width, 0.6*self.window_height),
                                                                fill='black', outline='purple'))
 
     def __hide_modal(self):
@@ -412,8 +430,7 @@ class Game:
             if self.process == 'game':
                 self.pac.move()
 
-                game_time = self.max_game_duration - (
-                            time.time() - self.__game_start_time - self.__pause_duration)
+                game_time = self.max_game_duration - (time.time() - self.__game_start_time - self.__pause_duration)
 
                 if game_time < 0:
                     self.__lost_game()
