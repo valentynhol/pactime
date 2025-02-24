@@ -57,6 +57,7 @@ class MainMenu:
 
     def close_menu(self):
         self.menu_canvas.destroy()
+        self.window.unbind('<Escape>')
 
     def __play(self, selected_map):
         with open('./maps/' + selected_map) as map_file:
@@ -68,10 +69,10 @@ class MainMenu:
         game.start()
 
     def __options(self):
-        pass
+        pass # TODO
 
     def __how_to_play(self):
-        pass
+        pass # TODO
 
     def __quit(self):
         if messagebox.askyesno("Quit", "Do you want to quit?"):
@@ -102,9 +103,11 @@ class MainMenu:
                 if cycle == 1:
                     self.map_btns[btn].config(cursor='watch', bg='purple', fg='black')
                 elif cycle <= 13:
-                    self.map_btns[btn].config(font=('Arial', int(self.map_selector['canvas'].winfo_height() / 15) - (cycle - 7), 'bold'))
+                    self.map_btns[btn].config(font=('Arial', int(self.map_selector['canvas'].winfo_height() / 15)
+                                                    - (cycle - 7), 'bold'))
                 elif cycle <= 17:
-                    self.map_btns[btn].config(font=('Arial', int(self.map_selector['canvas'].winfo_height() / 15) + 3 - (cycle - 14), 'bold'))
+                    self.map_btns[btn].config(font=('Arial', int(self.map_selector['canvas'].winfo_height() / 15) + 3
+                                                    - (cycle - 14), 'bold'))
                 elif cycle == 18:
                     self.map_btns[btn].config(cursor='hand2', bg='black', fg='purple')
 
@@ -120,6 +123,7 @@ class MainMenu:
                 event.widget.config(relief='flat')
                 btn_name = list(self.menu_buttons.keys())[list(self.menu_buttons.values()).index(event.widget)]
                 self.menu_btn_cycles[btn_name] = 1
+            return "break"
 
         self.menu_btn_cycles = {'play': None, 'options': None, 'how_to_play': None, 'quit': None}
         self.__menu_animation_constructor()
@@ -127,7 +131,7 @@ class MainMenu:
                                               activebackground='purple', activeforeground='black', width=15,
                                               highlightthickness=5, highlightbackground='purple', cursor='hand2',
                                               font=('Arial', self.window_height // 30, 'bold'),
-                                              command=self.__select_map)
+                                              command=self.__open_map_selection)
         self.menu_buttons['options'] = tk.Button(self.menu_canvas, text='Options', fg='purple', bg='black',
                                                  relief='flat', activebackground='purple', activeforeground='black',
                                                  width=15, highlightthickness=5, highlightbackground='purple',
@@ -198,12 +202,13 @@ class MainMenu:
 
         self.window.update()
 
-    def __select_map(self):
+    def __open_map_selection(self):
         def __click(event):
             if event.widget in self.map_btns.values():
                 event.widget.config(relief='flat')
                 btn_name = list(self.map_btns.keys())[list(self.map_btns.values()).index(event.widget)]
                 self.map_btn_cycles[btn_name] = 1
+            return "break"
 
         for btn in self.menu_buttons.values():
             btn.destroy()
@@ -270,16 +275,23 @@ class MainMenu:
 
         # Scroll for Windows
         # NOT TESTED
-        self.map_selector['inner_frame'].bind_all('<MouseWheel>', lambda event: self.map_selector['canvas'].yview_scroll(
-                                                                -1 if event.num==4 else 1 if event.num==5 else 0, 'units'))
+        self.map_selector['inner_frame'].bind_all('<MouseWheel>',
+                                                  lambda event: self.map_selector['canvas'].yview_scroll(
+                                                      -1 if event.num==4 else 1 if event.num==5 else 0, 'units'))
 
         # Scroll for Linux
         self.map_selector['inner_frame'].bind_all('<Button-4>', lambda event: self.map_selector['canvas'].yview_scroll(
                                                               -1, 'units'))
         self.map_selector['inner_frame'].bind_all('<Button-5>', lambda event: self.map_selector['canvas'].yview_scroll(
                                                               1, 'units'))
+        self.window.bind('<Escape>', lambda _: self.__close_map_selection())
 
         self.window.update_idletasks()
+
+    def __close_map_selection(self):
+        self.map_selector['frame'].destroy()
+        self.window.unbind('<Escape>')
+        self.open_menu()
 
     def __window_init(self):
         self.window = tk.Tk(className='pactime')
@@ -320,7 +332,7 @@ class Game:
     __game_start_time = 0
     __pause_start_time = 0
     __pause_duration = 0
-    __modal_labels = []
+    __modal = []
 
     __time_label = None
     score_label = None
@@ -334,7 +346,7 @@ class Game:
         self.__map_local_copy = game_map
         self.game_map = copy.deepcopy(self.__map_local_copy)
         self.max_game_duration = max_game_duration
-        self.__modal_labels = []
+        self.__modal = []
 
     def start(self):
         self.__map_init()
@@ -376,38 +388,38 @@ class Game:
         self.__pause_start_time = time.time()
         self.__show_modal()
 
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.455 * self.window_height,
-                                                          text='Menu', fill='white', font=('ArialBold', 18)))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.53 * self.window_height,
-                                                          text='Press "Esc" to continue game', fill='white',
-                                                          font=('Arial', int(0.005 * self.window_height))))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.55 * self.window_height,
-                                                          text='Press "Enter" tо restart game', fill='white',
-                                                          font=('Arial', int(0.005 * self.window_height))))
+        self.__modal.append(self.field.create_text(0.5 * self.window_width, 0.455 * self.window_height,
+                                                   text='Menu', fill='white', font=('ArialBold', 18)))
+        self.__modal.append(self.field.create_text(0.5 * self.window_width, 0.53 * self.window_height,
+                                                   text='Press "Esc" to continue game', fill='white',
+                                                   font=('Arial', int(0.005 * self.window_height))))
+        self.__modal.append(self.field.create_text(0.5 * self.window_width, 0.55 * self.window_height,
+                                                   text='Press "Enter" tо restart game', fill='white',
+                                                   font=('Arial', int(0.005 * self.window_height))))
 
         self.process = 'menu'
 
     def __won_game(self):
         self.__show_modal()
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.455 * self.window_height,
-                                                          text='You won!!!', fill='white',
-                                                          font=('ArialBold', int(0.01 * self.window_height))))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.485 * self.window_height,
-                                                          text='Your score: ' + str(self.score), fill='white',
-                                                          font=('ArialBold', int(0.008 * self.window_height))))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.55 * self.window_height,
-                                                          text='Press "Enter" tо restart game', fill='white',
-                                                          font=('Arial', int(0.005 * self.window_height))))
+        self.__modal.append(self.field.create_text(0.5 * self.window_width, 0.455 * self.window_height,
+                                                   text='You won!!!', fill='white',
+                                                   font=('ArialBold', int(0.01 * self.window_height))))
+        self.__modal.append(self.field.create_text(0.5 * self.window_width, 0.485 * self.window_height,
+                                                   text='Your score: ' + str(self.score), fill='white',
+                                                   font=('ArialBold', int(0.008 * self.window_height))))
+        self.__modal.append(self.field.create_text(0.5 * self.window_width, 0.55 * self.window_height,
+                                                   text='Press "Enter" tо restart game', fill='white',
+                                                   font=('Arial', int(0.005 * self.window_height))))
         self.process = 'game ended'
 
     def __lost_game(self):
         self.__show_modal()
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.475 * self.window_height,
-                                                          text="Time's up!!! \n Game over", fill='white',
-                                                          font=('ArialBold', int(0.01 * self.window_height))))
-        self.__modal_labels.append(self.field.create_text(0.5 * self.window_width, 0.55 * self.window_height,
-                                                          text='Press "Enter" tо restart game', fill='white',
-                                                          font=('Arial', int(0.005 * self.window_height))))
+        self.__modal.append(self.field.create_text(0.5 * self.window_width, 0.475 * self.window_height,
+                                                   text="Time's up!!! \n Game over", fill='white',
+                                                   font=('ArialBold', int(0.01 * self.window_height))))
+        self.__modal.append(self.field.create_text(0.5 * self.window_width, 0.55 * self.window_height,
+                                                   text='Press "Enter" tо restart game', fill='white',
+                                                   font=('Arial', int(0.005 * self.window_height))))
         self.process = 'game ended'
 
     def __close_menu(self):
@@ -420,18 +432,15 @@ class Game:
             self.__pause_start_time = 0
 
     def __show_modal(self):
-        self.__modal_labels.append(self.field.create_rectangle((0.35*self.window_width, 0.4*self.window_height),
-                                                               (0.65*self.window_width, 0.6*self.window_height),
-                                                               fill='black', outline='purple'))
+        self.__modal.append(self.field.create_rectangle((0.35 * self.window_width, 0.4 * self.window_height),
+                                                        (0.65*self.window_width, 0.6*self.window_height),
+                                                        fill='black', outline='purple'))
 
     def __hide_modal(self):
-        self.__remove_modal_labels()
+        for element in self.__modal:
+            self.field.delete(element)
 
-    def __remove_modal_labels(self):
-        for index, label in enumerate(self.__modal_labels):
-            self.field.delete(label)
-
-        self.__modal_labels = []
+        self.__modal = []
 
     def __game_cycle(self):
         try:
@@ -558,6 +567,14 @@ class Game:
         self.field.create_text(self.window_width/2, self.window_height - self.window_height / 110, text='Menu -- "Esc"',
                                fill='white', font=('ArialBold', self.window_height // 90), anchor='center')
 
+class ClassicGameMode(Game):
+    pass #TODO
+
+class TimeRaceGameMode(Game):
+    pass # TODO
+
+class ObstacleCourseGameMode(Game):
+    pass # TODO
 
 class Pac:
     x = 0
