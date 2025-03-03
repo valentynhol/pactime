@@ -77,8 +77,8 @@ class MainMenu:
 
         self.close_menu()
 
-        game = TimeRaceGameMode(self, game_map['gameMap'], game_map['maxGameDuration'])
-        #game = ClassicGameMode(self, game_map['gameMap'])
+        #game = TimeRaceGameMode(self, game_map['gameMap'], game_map['maxGameDuration'])
+        game = ClassicGameMode(self, game_map['gameMap'])
         game.start()
 
     def __options(self):
@@ -559,7 +559,7 @@ class ClassicGameMode(Game):
     def _reset_properties(self):
         self.process = 'game'
         self.score = 0
-        self.ghosts = []
+        self.ghosts = [] # comment this to see something funny
 
     def _gui_init(self):
         self.score_label = self.field.create_text(40, self.window_height/40, text='Score: 0', fill='white',
@@ -593,7 +593,6 @@ class ClassicGameMode(Game):
                 self._game_rules()
         except KeyboardInterrupt:
             exit()
-
 
 class TimeRaceGameMode(Game):
     gm_name = "Time race"
@@ -657,6 +656,7 @@ class TimeRaceGameMode(Game):
 
 class ObstacleCourseGameMode(Game):
     gm_name = "Obstacle course"
+
 
 class CharacterEntity:
     x = 0
@@ -757,7 +757,6 @@ class CharacterEntity:
     def _move_graphic_obj(self, x_to_move, y_to_move):
         self.game.field.move(self.graphic_obj, x_to_move, y_to_move)
 
-
 class Pac(CharacterEntity):
     x = 0
     y = 0
@@ -818,7 +817,6 @@ class Pac(CharacterEntity):
         self._eat_dot()
         super().move()
 
-
     def die(self):
         arc_size = -280 - self.mouth_phase * 17
         while arc_size:
@@ -840,9 +838,29 @@ class Ghost(CharacterEntity):
         cs = game.cell_size
         graphic_obj_x = x * cs + game.offset_x + 0.25 * cs
         graphic_obj_y = y * cs + game.offset_y + 0.25 * cs
-        self.graphic_obj = game.field.create_arc([graphic_obj_x, graphic_obj_y],
-                                                 [graphic_obj_x + cs, graphic_obj_y + cs],
-                                                 fill=color, start=-45, extent=270, tags=["CharacterEntity", "Ghost"])
+        self.graphic_obj = [
+            game.field.create_arc([graphic_obj_x + 0.1*cs, graphic_obj_y],
+                                  [graphic_obj_x + cs - 0.1*cs, graphic_obj_y + cs],
+                                  fill=color, start=0, extent=180, tags=["CharacterEntity", "Ghost"]),
+            game.field.create_polygon([graphic_obj_x + 0.1*cs, graphic_obj_y + 0.5*cs],
+                                      [graphic_obj_x + 0.9*cs, graphic_obj_y + 0.5*cs],
+                                      [graphic_obj_x + 0.9*cs, graphic_obj_y + cs],
+                                      [graphic_obj_x + 0.8*cs, graphic_obj_y + 0.9*cs],
+                                      [graphic_obj_x + 0.7*cs, graphic_obj_y + cs],
+                                      [graphic_obj_x + 0.6*cs, graphic_obj_y + 0.9*cs],
+                                      [graphic_obj_x + 0.5*cs, graphic_obj_y + cs],
+                                      [graphic_obj_x + 0.4*cs, graphic_obj_y + 0.9*cs],
+                                      [graphic_obj_x + 0.3*cs, graphic_obj_y + cs],
+                                      [graphic_obj_x + 0.2*cs, graphic_obj_y + 0.9*cs],
+                                      [graphic_obj_x + 0.1*cs, graphic_obj_y + cs],
+                                      fill=color, tags=["CharacterEntity", "Ghost"]),
+            game.field.create_rectangle([graphic_obj_x + 0.25*cs, graphic_obj_y + 0.4*cs],
+                                        [graphic_obj_x + 0.4*cs, graphic_obj_y + 0.55*cs],
+                                        fill="black", outline="white", tags=["CharacterEntity", "Ghost"]),
+            game.field.create_rectangle([graphic_obj_x + 0.6*cs, graphic_obj_y + 0.4*cs],
+                                        [graphic_obj_x + 0.75*cs, graphic_obj_y + 0.55*cs],
+                                        fill="black", outline="white", tags=["CharacterEntity", "Ghost"])
+        ]
 
     def kill_pac(self):
         pac = self.game.pac
@@ -862,6 +880,10 @@ class Ghost(CharacterEntity):
             self.next_direction = random.choice(dir_choice)
 
         super().move()
+
+    def _move_graphic_obj(self, x_to_move, y_to_move):
+        for obj in self.graphic_obj:
+            self.game.field.move(obj, x_to_move, y_to_move)
 
 class MapGenerationError(Exception):
     pass
