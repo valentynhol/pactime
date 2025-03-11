@@ -28,6 +28,8 @@ class MainMenu:
     selector_btns = {}
     selector_btn_phase = {}
 
+    curr_gm_class = None
+
     maps = os.listdir('./maps')
 
     def __init__(self):
@@ -52,7 +54,7 @@ class MainMenu:
                     for btn in list(self.menu_btns.keys()):
                         self.__btn_animation(btn, 'menu')
                     for btn in list(self.selector_btns.keys()):
-                        self.__btn_animation(btn, self.selector_type)
+                        self.__btn_animation(btn, 'selector')
 
                     self.window.update_idletasks()
                     self.window.update()
@@ -77,8 +79,7 @@ class MainMenu:
 
         self.close_menu()
 
-        #game = TimeRaceGameMode(self, game_map['gameMap'], game_map['maxGameDuration'])
-        game = ClassicGameMode(self, game_map['gameMap'])
+        game = self.curr_gm_class(self, game_map)
         game.start()
 
     def __options(self):
@@ -110,7 +111,7 @@ class MainMenu:
             if cycle == 19:
                 self.menu_btn_phase[btn] = None
 
-        elif btn_type == 'map_select':
+        elif btn_type == 'selector':
             cycle = self.selector_btn_phase[btn]
             if cycle:
                 if cycle == 1:
@@ -128,7 +129,10 @@ class MainMenu:
 
             if cycle == 19:
                 self.selector_btn_phase[btn] = None
-                self.__play(btn)
+                if self.selector_type == "map_select":
+                    self.__play(btn)
+                elif self.selector_type == "gm_select":
+                    self.__open_map_selection(btn)
 
     def __create_menu_gui(self):
         def __click(event):
@@ -144,7 +148,7 @@ class MainMenu:
                                            activebackground='purple', activeforeground='black', width=15,
                                            highlightthickness=5, highlightbackground='purple', cursor='hand2',
                                            font=('Arial', self.window_height // 30, 'bold'),
-                                           command=self.__open_map_selection)
+                                           command=self.__open_game_mode_selection)
         self.menu_btns['options'] = tk.Button(self.menu_canvas, text='Options', fg='purple', bg='black',
                                               relief='flat', activebackground='purple', activeforeground='black',
                                               width=15, highlightthickness=5, highlightbackground='purple',
@@ -215,22 +219,26 @@ class MainMenu:
 
         self.window.update()
 
-    def __open_map_selection(self):
+    def __open_map_selection(self, gm_class):
+        self.curr_gm_class = gm_class
+
         btn_list = {}
         for num, game_map in enumerate(self.maps):
             with open('./maps/' + game_map) as map_file:
-                btn_list[game_map] = json.load(map_file)['name']
+                map_json = json.load(map_file)
+                if gm_class.gm_short in map_json["gameModes"]:
+                    btn_list[game_map] = map_json['name']
 
-        self.selector_type = 'map_select'
+        self.selector_type = "map_select"
         self.__clear_menu()
         self.__construct_selector_submenu(btn_list)
 
     def __open_game_mode_selection(self):
         btn_list = {}
         for gm_class in Game.__subclasses__():
-            btn_list[gm_class] = gm_class.__name__
+            btn_list[gm_class] = gm_class.gm_name
 
-        self.selector_type = 'gm_select'
+        self.selector_type = "gm_select"
         self.__clear_menu()
         self.__construct_selector_submenu(btn_list)
 
@@ -323,6 +331,9 @@ class MainMenu:
 
 
 class Game:
+    gm_name = "Default"
+    gm_short = "def"
+
     main_menu = None
     field = None
     game_map = None
@@ -348,7 +359,7 @@ class Game:
 
         self._reset_properties()
 
-        self._map_local_copy = game_map
+        self._map_local_copy = game_map["gameMap"]
         self.game_map = copy.deepcopy(self._map_local_copy)
 
     def start(self):
@@ -552,6 +563,7 @@ class Game:
 
 class ClassicGameMode(Game):
     gm_name = "Classic"
+    gm_short = "cl"
 
     score = 0
     ghosts = []
@@ -596,6 +608,7 @@ class ClassicGameMode(Game):
 
 class TimeRaceGameMode(Game):
     gm_name = "Time race"
+    gm_short = "tr"
 
     score = 0
     max_game_duration = 0
@@ -607,9 +620,9 @@ class TimeRaceGameMode(Game):
     _time_label = None
     score_label = None
 
-    def __init__(self, main_menu, game_map, max_game_duration):
+    def __init__(self, main_menu, game_map):
         super().__init__(main_menu, game_map)
-        self.max_game_duration = max_game_duration
+        self.max_game_duration = game_map["maxGameDuration"]
 
     def _open_menu(self):
         self._pause_start_time = time.time()
@@ -656,6 +669,7 @@ class TimeRaceGameMode(Game):
 
 class ObstacleCourseGameMode(Game):
     gm_name = "Obstacle course"
+    gm_short = "oc"
 
 
 class CharacterEntity:
