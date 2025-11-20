@@ -3,7 +3,6 @@ import time
 import json
 import tkinter as tk
 import tkinter.ttk as ttk
-from tkinter import messagebox
 
 from classes.game import Game
 
@@ -38,24 +37,21 @@ class MainMenu:
 
         while self.window:
             try:
-                try:
-                    time.sleep(0.01)
-                    try:
-                        self.__menu_animation()
-                    except tk.TclError:
-                        pass
+                time.sleep(0.01)
+                self.__menu_animation()
 
-                    for btn in list(self.menu_btns.keys()):
-                        self.__btn_animation(btn, 'menu')
-                    for btn in list(self.selector_btns.keys()):
-                        self.__btn_animation(btn, 'selector')
+                for btn in list(self.menu_btns.keys()):
+                    self.__btn_animation(btn, 'menu')
+                for btn in list(self.selector_btns.keys()):
+                    self.__btn_animation(btn, 'selector')
 
+                if self.window:
                     self.window.update_idletasks()
                     self.window.update()
-                except AttributeError and tk.TclError:
-                    pass
+                else:
+                    break
             except KeyboardInterrupt:
-                exit()
+                break
 
     def close_menu(self):
         self.menu_canvas.destroy()
@@ -79,13 +75,13 @@ class MainMenu:
     def __options(self):
         pass # TODO
 
-    def __how_to_play(self):
+    def __multiplayer_game(self):
         pass # TODO
 
     def __quit(self):
-        if messagebox.askyesno("Quit", "Do you want to quit?"):
-            self.window.destroy()
-            self.window = None
+        self.window.quit()
+        self.window.destroy()
+        self.window = None
 
     def __btn_animation(self, btn, btn_type=None):
         if btn_type == 'menu':
@@ -104,12 +100,12 @@ class MainMenu:
 
             if cycle == 19:
                 self.menu_btn_phase[btn] = None
-                if btn == "play":
+                if btn == "singleplayer":
                     self.__open_game_mode_selection()
+                elif btn == "multiplayer":
+                    self.__multiplayer_game()
                 elif btn == "options":
                     self.__options()
-                elif btn == "how_to_play":
-                    self.__how_to_play()
                 elif btn == "quit":
                     self.__quit()
 
@@ -137,30 +133,28 @@ class MainMenu:
                     self.__open_map_selection(btn)
 
     def __create_menu_gui(self):
-        self.menu_btn_phase = {'play': None, 'options': None, 'how_to_play': None, 'quit': None}
+        self.menu_btn_phase = {'singleplayer': None, 'multiplayer': None, 'options': None, 'quit': None}
         self.__menu_animation_constructor()
-        self.menu_btns['play'] = tk.Button(self.menu_canvas, text='Play', fg='purple', bg='black', relief='flat',
-                                           activebackground='purple', activeforeground='black', width=15,
-                                           highlightthickness=5, highlightbackground='purple', cursor='hand2',
-                                           font=('Arial', self.window_height // 30, 'bold'))
+        self.menu_btns['singleplayer'] = tk.Button(self.menu_canvas, text='Singleplayer', fg='purple', bg='black',
+                                                   relief='flat', activebackground='purple', activeforeground='black',
+                                                   width=15, highlightthickness=5, highlightbackground='purple',
+                                                   cursor='hand2', font=('Arial', self.window_height // 30, 'bold'))
+        self.menu_btns['multiplayer'] = tk.Button(self.menu_canvas, text='Multiplayer', fg='purple', bg='black',
+                                                  relief='flat', activebackground='purple', activeforeground='black',
+                                                  width=15, highlightthickness=5, highlightbackground='purple',
+                                                  cursor='hand2', font=('Arial', self.window_height // 30, 'bold'))
         self.menu_btns['options'] = tk.Button(self.menu_canvas, text='Options', fg='purple', bg='black',
                                               relief='flat', activebackground='purple', activeforeground='black',
                                               width=15, highlightthickness=5, highlightbackground='purple',
                                               cursor='hand2', font=('Arial', self.window_height // 30, 'bold'))
-        self.menu_btns['how_to_play'] = tk.Button(self.menu_canvas, text='How to play', fg='purple', bg='black',
-                                                  relief='flat', activebackground='purple', activeforeground='black',
-                                                  width=15, highlightthickness=5, highlightbackground='purple',
-                                                  cursor='hand2', font=('Arial', self.window_height // 30, 'bold'))
         self.menu_btns['quit'] = tk.Button(self.menu_canvas, text='Quit', fg='purple', bg='black', relief='flat',
                                            activebackground='purple', activeforeground='black', width=15,
                                            highlightthickness=5, highlightbackground='purple', cursor='hand2',
                                            font=('Arial', self.window_height // 30, 'bold'))
 
-        self.menu_btns['play'].place(x=0.5 * self.window_width, y=15 / 30 * self.window_height, anchor='center')
-        self.menu_btns['options'].place(x=0.5 * self.window_width, y=19 / 30 * self.window_height,
-                                        anchor='center')
-        self.menu_btns['how_to_play'].place(x=0.5 * self.window_width, y=23 / 30 * self.window_height,
-                                            anchor='center')
+        self.menu_btns['singleplayer'].place(x=0.5 * self.window_width, y=15 / 30 * self.window_height, anchor='center')
+        self.menu_btns['multiplayer'].place(x=0.5 * self.window_width, y=19 / 30 * self.window_height, anchor='center')
+        self.menu_btns['options'].place(x=0.5 * self.window_width, y=23 / 30 * self.window_height, anchor='center')
         self.menu_btns['quit'].place(x=0.5 * self.window_width, y=27 / 30 * self.window_height, anchor='center')
 
         self.menu_canvas.bind_all('<Button-1>', self.__btn_click)
