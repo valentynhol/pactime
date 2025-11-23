@@ -108,14 +108,7 @@ class MainMenu:
             game_map = json.load(map_file)
 
         if self.multiplayer:
-            username = None
-            with open('./user_data/multiplayer.json') as json_file:
-                data = json.load(json_file)
-                username = data.get('username')
-
-            if username:
-                lobby_name, lobby_code, players = self.multiplayer.create(self.curr_gm_class, game_map, username)
-                self.__create_lobby_gui(lobby_name, lobby_code, players)
+            self.multiplayer.start_game(game_map)
         else:
             self.close_menu()
             game = self.curr_gm_class(self, game_map)
@@ -200,7 +193,17 @@ class MainMenu:
                 if self.selector_type == "map_select":
                     self.__start_game(btn)
                 elif self.selector_type == "gm_select":
-                    self.__open_map_selection(btn)
+                    if self.multiplayer:
+                        username = None
+                        with open('./user_data/multiplayer.json') as json_file:
+                            data = json.load(json_file)
+                            username = data.get('username')
+
+                        if username:
+                            lobby_name, lobby_code, players = self.multiplayer.create(btn, username)
+                            self.__create_lobby_gui(lobby_name, lobby_code, players)
+                    else:
+                        self.__open_map_selection(btn)
                 elif self.selector_type == "lobby_join_create":
                     if btn == 'change_username':
                         self.__open_multiplayer_username_field()
@@ -233,7 +236,7 @@ class MainMenu:
                     self.__create_lobby_gui(lobby_name, lobby_code, players)
                 elif self.selector_type == "lobby":
                     if btn == 'start_game':
-                        self.multiplayer.play()
+                        self.__open_map_selection(self.multiplayer.gm_class)
                     elif btn == 'leave_lobby':
                         self.multiplayer.leave()
                         self.__close_selector()
@@ -247,6 +250,42 @@ class MainMenu:
         while not self.gui_queue.empty():
             callback = self.gui_queue.get_nowait()
             callback()
+
+    def multiplayer_countdown(self, num):
+        if self.selector_type == "countdown":
+            self.selector['label'].config(text=f"Game starts in: {num}")
+            return
+        if self.selector_type != "map_select" and self.selector_type != "lobby":
+            return
+
+        self.selector_type = "countdown"
+        self.__clear_menu()
+
+        self.selector['frame'] = tk.Frame(self.menu_canvas, height=int(0.7 * self.window_height),
+                                          width=int(0.8 * self.window_width), highlightbackground='purple',
+                                          highlightthickness=5, bg='black', highlightcolor='purple')
+        self.selector['frame'].pack_propagate(False)
+        self.selector['frame'].place(x=int(0.5 * self.window_width), y=int(0.5 * self.window_height),
+                                     anchor='center')
+
+        self.selector['canvas'] = tk.Canvas(self.selector['frame'], bg='black', highlightthickness=0)
+        self.selector['canvas'].pack(side='left', fill='both', expand=True)
+
+        self.selector['inner_frame'] = tk.Frame(self.selector['canvas'], bg='black')
+        self.window.update_idletasks()
+
+        canvas_width = self.selector['canvas'].winfo_width()
+        canvas_height = self.selector['canvas'].winfo_height()
+        self.selector['label'] = tk.Label(self.selector['canvas'], text=f"Game starts in: {num}",
+                                          font=('Arial', int(canvas_height / 15), 'bold'),
+                                          fg='purple', bg='black')
+
+
+        self.selector['label'].place(x=int(0.5 * canvas_width), y=int(0.5 * canvas_height), anchor='center')
+
+        self.window.update_idletasks()
+
+
 
     def __create_menu_gui(self):
         self.menu_btn_phase = {'singleplayer': None, 'multiplayer': None, 'options': None, 'quit': None}

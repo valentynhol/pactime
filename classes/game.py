@@ -171,7 +171,7 @@ class Game:
         self.window_width = self.main_menu.window_width
 
         self.cell_size = min((self.window_height * 36 / 40) // len(self.game_map),
-                             (self.window_width * 39 / 40) // len(self.game_map[0]), 40)
+                             (self.window_width * 19 / 40) // len(self.game_map[0]), 40)
 
         self.map_width = len(self.game_map[0]) * self.cell_size + 0.5 * self.cell_size
         self.map_height = len(self.game_map) * self.cell_size + 0.5 * self.cell_size
@@ -368,3 +368,114 @@ class TimeRaceGameMode(Game):
 class ObstacleCourseGameMode(Game):
     gm_name = "Obstacle course"
     gm_short = "oc"
+
+
+class MiniView:
+    def __init__(self, parent_frame, map_width, map_height):
+        self.parent_frame = parent_frame
+        self.map_width = map_width
+        self.map_height = map_height
+
+        parent_frame.update_idletasks()
+        frame_width = parent_frame.winfo_width()
+        frame_height = parent_frame.winfo_height()
+
+        self.cell_size = min(frame_width / map_width, frame_height / map_height)
+
+        self.canvas = tk.Canvas(parent_frame, bg='black', width=frame_width, height=frame_height)
+        self.canvas.pack(fill='both', expand=True)
+
+        self.pac_pos = None
+        self.dot_positions = set()
+        self.dot_ids = {}
+        self.wall_ids = set()
+
+    @staticmethod
+    def init_mini_views(game):
+        outer_frames = [
+            tk.Frame(game.field, height=int(35 / 80 * game.window_height),
+                     width=int(0.25 * game.window_width), highlightbackground='purple',
+                     highlightthickness=5, bg='yellow', highlightcolor='purple'),
+            tk.Frame(game.field, height=int(35 / 80 * game.window_height),
+                     width=int(0.25 * game.window_width), highlightbackground='purple',
+                     highlightthickness=5, bg='green', highlightcolor='purple'),
+            tk.Frame(game.field, height=int(35 / 80 * game.window_height),
+                     width=int(0.25 * game.window_width), highlightbackground='purple',
+                     highlightthickness=5, bg='red', highlightcolor='purple'),
+            tk.Frame(game.field, height=int(35 / 80 * game.window_height),
+                     width=int(0.25 * game.window_width), highlightbackground='purple',
+                     highlightthickness=5, bg='blue', highlightcolor='purple')
+        ]
+        outer_frames[0].place(x=0, y=int(3 / 40 * game.window_height), anchor='nw')
+        outer_frames[1].place(x=game.window_width, y=int(3 / 40 * game.window_height), anchor='ne')
+        outer_frames[2].place(x=0, y=int(41 / 80 * game.window_height), anchor='nw')
+        outer_frames[3].place(x=game.window_width, y=int(41 / 80 * game.window_height), anchor='ne')
+
+        playername_labels = [
+            tk.Label(outer_frames[0], text="Player 1", font=('Arial', int(game.window_height / 30), 'bold'),
+                     fg='purple', bg='black'),
+            tk.Label(outer_frames[1], text="Player 2", font=('Arial', int(game.window_height / 30), 'bold'),
+                     fg='purple', bg='black'),
+            tk.Label(outer_frames[2], text="Player 3", font=('Arial', int(game.window_height / 30), 'bold'),
+                     fg='purple', bg='black'),
+            tk.Label(outer_frames[3], text="Player 4", font=('Arial', int(game.window_height / 30), 'bold'),
+                     fg='purple', bg='black')
+        ]
+        frames = [
+            tk.Frame(outer_frames[0], highlightbackground='purple', highlightthickness=5, bg='yellow',
+                     highlightcolor='purple'),
+            tk.Frame(outer_frames[1], highlightbackground='purple', highlightthickness=5, bg='green',
+                     highlightcolor='purple'),
+            tk.Frame(outer_frames[2], highlightbackground='purple', highlightthickness=5, bg='red',
+                     highlightcolor='purple'),
+            tk.Frame(outer_frames[3], highlightbackground='purple', highlightthickness=5, bg='blue',
+                     highlightcolor='purple')
+        ]
+        playername_labels[0].pack(side='top')
+        playername_labels[1].pack(side='top')
+        playername_labels[2].pack(side='top')
+        playername_labels[3].pack(side='top')
+        frames[0].pack(side='top', fill='both', expand=True)
+        frames[1].pack(side='top', fill='both', expand=True)
+        frames[2].pack(side='top', fill='both', expand=True)
+        frames[3].pack(side='top', fill='both', expand=True)
+
+        return playername_labels, frames
+
+    @staticmethod
+    def get_state(game):
+        pac_state = (game.pac.x, game.pac.y) if game.pac else None
+
+        current_dots = set()
+        for row_num, row in enumerate(game.game_map):
+            for col_num, cell in enumerate(row):
+                if getattr(cell, 'tags', None) == ("Dot",):
+                    current_dots.add((col_num, row_num))
+
+        eaten_dots = set()
+        if hasattr(game, "_last_dot_positions"):
+            eaten_dots = game._last_dot_positions - current_dots
+
+        game._last_dot_positions = current_dots.copy()
+
+        return {
+            "pac_pos": pac_state,
+            "eaten_dots": list(eaten_dots)
+        }
+
+    def apply_state(self, state):
+        new_pac = state.get("pac_pos")
+        if new_pac != self.pac_pos:
+            if hasattr(self, 'pac_id') and self.pac_id:
+                self.canvas.delete(self.pac_id)
+            if new_pac:
+                x, y = new_pac
+                self.pac_id = self.canvas.create_oval(x * self.cell_size, y * self.cell_size,
+                                                      (x + 1) * self.cell_size, (y + 1) * self.cell_size, fill='yellow')
+            self.pac_pos = new_pac
+
+        for dot in state.get("eaten_dots", []):
+            if dot in self.dot_ids:
+                self.canvas.delete(self.dot_ids[dot])
+                self.dot_positions.discard(dot)
+                del self.dot_ids[dot]

@@ -1,9 +1,13 @@
 import json
 import threading
+from queue import Queue
+from urllib.parse import quote
+
 import requests
 from websocket import create_connection
 
 import constants
+from classes.game import MiniView, Game
 
 
 class MultiplayerGameWrapper:
@@ -13,23 +17,23 @@ class MultiplayerGameWrapper:
     lobby_code = None
     username = None
     ws = None
-    remote_states = {}
+    remote_views = {}
     ws_thread = None
     running = False
+    gui_queue = None
 
     def __init__(self, main_menu):
         self.main_menu = main_menu
+        self.gui_queue = Queue()
 
-    def create(self, gm_class, game_map, username):
+    def create(self, gm_class, username):
         self.gm_class = gm_class
-        self.game_map = game_map
         self.username = username
 
         payload = {
             "name": username + "'s lobby",
             "hostUsername": username,
             "gmShortName": gm_class.gm_short,
-            #"mapJson": game_map,
         }
 
         r = requests.post(f"{constants.API_BASE_URL}/lobbies", json=payload)
@@ -71,6 +75,12 @@ class MultiplayerGameWrapper:
         self.connect_ws()
 
         data = r.json()
+
+        for gm_class in Game.__subclasses__():
+            if gm_class.gm_short == data["modeShort"]:
+                self.gm_class = gm_class
+                break
+
         return data["name"], data["code"], data["players"]
 
     def leave(self):
@@ -98,34 +108,51 @@ class MultiplayerGameWrapper:
         data_btns = {}
 
         for lobby in data:
-            data_btns[lobby["code"]] = f'{lobby["name"]} {lobby["code"]} {len(lobby["players"])}/5'
+            data_btns[lobby["code"]] = f'{lobby["code"]} {len(lobby["players"])}/5'
 
         return data_btns
 
-    def play(self):
+    def start_game(self, game_map):
+        if not self.lobby_code or not self.username:
+            return
+
+        payload = {
+            "code": self.lobby_code,
+            "gameMap": json.dumps(game_map)
+        }
+
+        r = requests.post(f"{constants.API_BASE_URL}/lobbies/start", json=payload)
+        r.raise_for_status()
+
+    def play(self, connected_players):
         if not self.gm_class or not self.game_map:
             raise ValueError("Game not initialized")
 
-        game = self.gm_class(self.game_map)
+        game = self.gm_class(self.main_menu, self.game_map)
         game.game_window_init()
 
-        if self.ws:
-            msg = {"type": "GAME_START", "username": self.username}
-            self.ws.send(json.dumps(msg))
+        playername_labels, frames = MiniView.init_mini_views(game)
+
+        idx = 0
+        for player in connected_players:
+            if player == self.username:
+                continue
+
+            playername_labels[idx].config(text=player)
+            self.remote_views[player] = MiniView(frames[idx], game.map_width, game.map_height)
+            idx += 1
 
         while not game.process == "game_ended":
             game.game_window_update()
+            self._process_gui_queue()
 
             if self.ws:
                 update = {
                     "type": "STATE_UPDATE",
                     "username": self.username,
-                    "state": game.get_state()
+                    "state": MiniView.get_state(game)
                 }
                 self.ws.send(json.dumps(update))
-
-            for username, state in self.remote_states.items():
-                game.apply_remote_state(username, state)
 
         if self.ws:
             msg = {"type": "GAME_END", "username": self.username}
@@ -137,7 +164,8 @@ class MultiplayerGameWrapper:
         if not self.lobby_code:
             return
 
-        ws_url = f"{constants.API_WS_URL}/lobbies/{self.lobby_code}"
+        encoded_username = quote(self.username)
+        ws_url = f"{constants.API_WS_URL}/lobbies/{self.lobby_code}?user={encoded_username}"
         self.ws = create_connection(ws_url)
 
         hello = {
@@ -156,6 +184,11 @@ class MultiplayerGameWrapper:
             except:
                 pass
             self.ws = None
+
+    def _process_gui_queue(self):
+        while not self.gui_queue.empty():
+            callback = self.gui_queue.get_nowait()
+            callback()
 
     def _start_ws_listener(self):
         self.running = True
@@ -182,19 +215,20 @@ class MultiplayerGameWrapper:
 
     def _handle_ws_message(self, data: dict):
         print(data)
-        msg_type = data.get("type")
+        msg_type = data["type"]
 
         if msg_type == "PLAYER_LIST_CHANGED":
             players = data["lobby"]["players"]
             self.main_menu.gui_queue.put(lambda: self.main_menu.update_lobby_gui(players))
         elif msg_type == "STATE_UPDATE":
             username = data["username"]
-            if username != self.username:  # ignore own updates
-                self.remote_states[username] = data["state"]
-        elif msg_type == "MAP_UPDATE":
-            pass
+            if username != self.username and username in self.remote_views.keys():
+                self.gui_queue.put(self.remote_views[username].update_state(data["state"]))
+        elif msg_type == "COUNTDOWN":
+            self.main_menu.gui_queue.put(lambda: self.main_menu.multiplayer_countdown(data["number"]))
         elif msg_type == "GAME_START":
-            pass
-
+            connected_players = data["connectedPlayers"]
+            self.game_map = json.loads(data["gameMap"])
+            self.main_menu.gui_queue.put(lambda: self.play(connected_players))
         elif msg_type == "GAME_END":
             pass
