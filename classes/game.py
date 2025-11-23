@@ -38,19 +38,25 @@ class Game:
         self.game_map = copy.deepcopy(self._map_local_copy)
 
     def start(self):
+        self.game_window_init()
+
+        try:
+            while self.main_menu.window:
+                self.game_window_update()
+        except tk.TclError:
+            pass
+
+    def game_window_init(self):
         self._map_init()
         self._gui_init()
 
         self.field.bind_all('<KeyPress>', self.pac.turn)
         self.field.bind_all('<KeyRelease>', self._process_change)
 
-        try:
-            while self.main_menu.window:
-                self.main_menu.window.update_idletasks()
-                self._game_cycle()
-                self.main_menu.window.update()
-        except tk.TclError:
-            pass
+    def game_window_update(self):
+        self.main_menu.window.update_idletasks()
+        self._game_cycle()
+        self.main_menu.window.update()
 
     def restart_game(self):
         self.field.delete('all')
