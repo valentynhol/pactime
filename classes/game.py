@@ -371,6 +371,10 @@ class ObstacleCourseGameMode(Game):
 
 
 class MiniView:
+    pac_id = None
+    game_state = None
+    gs_label = None
+
     def __init__(self, parent_frame, game_map):
         self.parent_frame = parent_frame
         self.map_width = len(game_map["gameMap"][0])
@@ -382,11 +386,14 @@ class MiniView:
 
         self.cell_size = min(frame_width / self.map_width, frame_height / self.map_height)
 
+        self.x_offset = (frame_width - self.map_width * self.cell_size) / 2
+        self.y_offset = (frame_height - self.map_height * self.cell_size) / 2
+
         self.canvas = tk.Canvas(parent_frame, width=frame_width, height=frame_height, background='black',
                                 highlightthickness=0)
         self.canvas.pack(fill='both', expand=True)
 
-        self.pac_pos = None
+        self.pac_state = None
         self.dot_positions = set()
         self.dot_ids = {}
         self.wall_ids = set()
@@ -396,10 +403,10 @@ class MiniView:
     @staticmethod
     def init_mini_views(game):
         outer_frames = [
-            tk.Frame(game.field, highlightbackground='purple', highlightthickness=5, background='black'),
-            tk.Frame(game.field, highlightbackground='purple', highlightthickness=5, background='black'),
-            tk.Frame(game.field, highlightbackground='purple', highlightthickness=5, background='black'),
-            tk.Frame(game.field, highlightbackground='purple', highlightthickness=5, background='black'),
+            tk.Frame(game.field, background='black'),
+            tk.Frame(game.field, background='black'),
+            tk.Frame(game.field, background='black'),
+            tk.Frame(game.field, background='black'),
         ]
         outer_frames[0].place(x=0, y=int(3 / 40 * game.window_height), anchor='nw',
                               height=int(35 / 80 * game.window_height), width=int(0.25 * game.window_width))
@@ -423,10 +430,10 @@ class MiniView:
                      fg='purple', bg='black')
         ]
         frames = [
-            tk.Frame(outer_frames[0], bg='yellow'),
-            tk.Frame(outer_frames[1], bg='green'),
-            tk.Frame(outer_frames[2], bg='red'),
-            tk.Frame(outer_frames[3], bg='blue')
+            tk.Frame(outer_frames[0], bg='black'),
+            tk.Frame(outer_frames[1], bg='black'),
+            tk.Frame(outer_frames[2], bg='black'),
+            tk.Frame(outer_frames[3], bg='black')
         ]
 
         playername_labels[0].pack(side='top')
@@ -452,12 +459,12 @@ class MiniView:
 
     @staticmethod
     def get_state(game):
-        pac_state = (game.pac.x, game.pac.y) if game.pac else None
+        pac_state = {"pos": (game.pac.x, game.pac.y), "direction": game.pac.direction} if game.pac else None
 
         current_dots = set()
         for row_num, row in enumerate(game.game_map):
             for col_num, cell in enumerate(row):
-                if isinstance(cell, int):  # canvas ID
+                if isinstance(cell, int):
                     if "Dot" in game.field.gettags(cell):
                         current_dots.add((col_num, row_num))
 
@@ -468,27 +475,37 @@ class MiniView:
         game._last_dot_positions = current_dots.copy()
 
         return {
-            "pac_pos": pac_state,
-            "eaten_dots": list(eaten_dots)
+            "pac_state": pac_state,
+            "eaten_dots": list(eaten_dots),
+            "game_state": game.process,
         }
 
     def apply_state(self, state):
-        new_pac = state.get("pac_pos")
-        if new_pac != self.pac_pos:
+        new_game_state = state.get("game_state")
+        if new_game_state != self.game_state:
+            self.game_state = new_game_state
+            if new_game_state == "game":
+                self._remove_game_state_label()
+            else:
+                self._create_game_state_label()
+
+        new_pac = state.get("pac_state")
+        if new_pac != self.pac_state:
+            pac_pos = new_pac["pos"]
+            pac_dir = new_pac["direction"]
             if hasattr(self, 'pac_id') and self.pac_id:
                 self.canvas.delete(self.pac_id)
             if new_pac:
-                x, y = new_pac
-                self.pac_id = self.canvas.create_oval(
-                    x * self.cell_size, y * self.cell_size,
-                    (x + 1) * self.cell_size, (y + 1) * self.cell_size,
-                    fill='yellow'
-                )
-            self.pac_pos = new_pac
+                x, y = pac_pos
+                px = self.x_offset + x * self.cell_size
+                py = self.y_offset + y * self.cell_size
+                arc_size = 270
+                self.pac_id = self.canvas.create_arc(px, py, px + self.cell_size, py + self.cell_size,
+                                                     fill='yellow', start = pac_dir - arc_size / 2, extent = arc_size)
+            self.pac_state = new_pac
 
         for dot in state.get("eaten_dots", []):
             dot = tuple(dot)
-
             if dot in self.dot_ids:
                 self.canvas.delete(self.dot_ids[dot])
                 del self.dot_ids[dot]
@@ -501,15 +518,37 @@ class MiniView:
 
         for y, row in enumerate(game_map):
             for x, cell in enumerate(row):
+                px = self.x_offset + x * self.cell_size
+                py = self.y_offset + y * self.cell_size
+
                 if cell == '#':
                     self.wall_ids.add(
-                        self.canvas.create_rectangle(x * self.cell_size, y * self.cell_size,
-                                                     (x + 1) * self.cell_size, (y + 1) * self.cell_size,
+                        self.canvas.create_rectangle(px, py,
+                                                     px + self.cell_size, py + self.cell_size,
                                                      fill='purple')
                     )
                 elif cell == '.':
-                    dot_id = self.canvas.create_rectangle((x + 0.4) * self.cell_size, (y + 0.4) * self.cell_size,
-                                                          (x + 0.6) * self.cell_size, (y + 0.6) * self.cell_size,
+                    dot_id = self.canvas.create_rectangle(px + 0.4 * self.cell_size, py + 0.4 * self.cell_size,
+                                                          px + 0.6 * self.cell_size, py + 0.6 * self.cell_size,
                                                           fill='white')
                     self.dot_positions.add((x, y))
                     self.dot_ids[(x, y)] = dot_id
+
+    def _create_game_state_label(self):
+        if self.game_state == "menu":
+            label_text = "Paused"
+        elif self.game_state == "game_ended":
+            label_text = "Game Ended"
+        else:
+            return
+
+        self.gs_label = tk.Label(self.canvas, text=label_text, font=('Arial', int(self.canvas.winfo_height() / 25), 'bold'),
+                                 background="black", foreground="purple", highlightthickness=5,
+                                 highlightbackground="purple")
+        self.gs_label.place(x=int(self.canvas.winfo_width() / 2), y=int(self.canvas.winfo_height() / 2),
+                            anchor='center')
+
+    def _remove_game_state_label(self):
+        if self.gs_label:
+            self.gs_label.destroy()
+

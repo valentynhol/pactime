@@ -22,6 +22,7 @@ class MultiplayerGameWrapper:
     ws_thread = None
     running = False
     gui_queue = None
+    lobby_game_ended = False
 
     def __init__(self, main_menu):
         self.main_menu = main_menu
@@ -147,19 +148,15 @@ class MultiplayerGameWrapper:
             game.game_window_update()
             self._process_gui_queue()
 
-            if self.ws:
-                update = {
-                    "type": "STATE_UPDATE",
-                    "username": self.username,
-                    "state": MiniView.get_state(game)
-                }
-                self.ws.send(json.dumps(update))
+            self._send_game_state_update(game)
 
-        if self.ws:
-            msg = {"type": "GAME_END", "username": self.username}
-            self.ws.send(json.dumps(msg))
+        self._send_game_state_update(game)
 
-        return game.result()
+        while not self.lobby_game_ended:
+            game.game_window_update()
+            self._process_gui_queue()
+
+        return None # game.result()
 
     def connect_ws(self):
         if not self.lobby_code:
@@ -185,6 +182,16 @@ class MultiplayerGameWrapper:
             except:
                 pass
             self.ws = None
+
+    def _send_game_state_update(self, game):
+        if self.ws:
+            update = {
+                "type": "STATE_UPDATE",
+                "username": self.username,
+                "state": MiniView.get_state(game)
+            }
+            self.ws.send(json.dumps(update))
+
 
     def _process_gui_queue(self):
         while not self.gui_queue.empty():
@@ -215,7 +222,6 @@ class MultiplayerGameWrapper:
         self.ws_thread.start()
 
     def _handle_ws_message(self, data: dict):
-        print(data)
         msg_type = data["type"]
 
         if msg_type == "PLAYER_LIST_CHANGED":
