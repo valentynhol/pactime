@@ -18,6 +18,7 @@ class MultiplayerGameWrapper:
     username = None
     ws = None
     remote_views = {}
+    mini_views_gui = []
     ws_thread = None
     running = False
     gui_queue = None
@@ -131,15 +132,15 @@ class MultiplayerGameWrapper:
         game = self.gm_class(self.main_menu, self.game_map)
         game.game_window_init()
 
-        playername_labels, frames = MiniView.init_mini_views(game)
+        self.mini_views_gui = MiniView.init_mini_views(game)
 
         idx = 0
         for player in connected_players:
             if player == self.username:
                 continue
 
-            playername_labels[idx].config(text=player)
-            self.remote_views[player] = MiniView(frames[idx], game.map_width, game.map_height)
+            self.mini_views_gui[idx][1].config(text=player)
+            self.remote_views[player] = MiniView(self.mini_views_gui[idx][2], self.game_map)
             idx += 1
 
         while not game.process == "game_ended":
@@ -223,7 +224,7 @@ class MultiplayerGameWrapper:
         elif msg_type == "STATE_UPDATE":
             username = data["username"]
             if username != self.username and username in self.remote_views.keys():
-                self.gui_queue.put(self.remote_views[username].update_state(data["state"]))
+                self.gui_queue.put(lambda: self.remote_views[username].apply_state(data["state"]))
         elif msg_type == "COUNTDOWN":
             self.main_menu.gui_queue.put(lambda: self.main_menu.multiplayer_countdown(data["number"]))
         elif msg_type == "GAME_START":
