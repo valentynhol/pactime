@@ -9,7 +9,6 @@ class Game:
     gm_name = "Default"
     gm_short = "def"
 
-    main_menu = None
     field = None
     game_map = None
     pac = None
@@ -29,8 +28,8 @@ class Game:
 
     _modal = []
 
-    def __init__(self, main_menu, game_map):
-        self.main_menu = main_menu
+    def __init__(self, window, game_map):
+        self.window = window
 
         self._reset_properties()
 
@@ -41,7 +40,7 @@ class Game:
         self.game_window_init()
 
         try:
-            while self.main_menu.window:
+            while self.window:
                 self.game_window_update()
         except tk.TclError:
             pass
@@ -54,9 +53,9 @@ class Game:
         self.field.bind_all('<KeyRelease>', self._process_change)
 
     def game_window_update(self):
-        self.main_menu.window.update_idletasks()
+        self.window.update_idletasks()
         self._game_cycle()
-        self.main_menu.window.update()
+        self.window.update()
 
     def restart_game(self):
         self.field.delete('all')
@@ -74,7 +73,7 @@ class Game:
 
     def close_game(self):
         self.field.destroy()
-        self.main_menu.window.update_idletasks()
+        self.window.update_idletasks()
         self.field = None
 
     def won_game(self):
@@ -160,15 +159,14 @@ class Game:
                     self._close_menu()
                 if key == 'BackSpace':
                     self.close_game()
-                    self.main_menu.open_menu()
                     del self
             elif self.process == 'game_ended':
                 if key == 'Return':
                     self.restart_game()
 
     def _map_init(self):
-        self.window_height = self.main_menu.window_height
-        self.window_width = self.main_menu.window_width
+        self.window_height = self.window.window_height
+        self.window_width = self.window.window_width
 
         self.cell_size = min((self.window_height * 36 / 40) // len(self.game_map),
                              (self.window_width * 19 / 40) // len(self.game_map[0]), 40)
@@ -179,8 +177,9 @@ class Game:
         self.offset_x = 0.5 * (self.window_width - self.map_width)
         self.offset_y = 0.5 * (1.025 * self.window_height - self.map_height)
 
-        self.field = tk.Canvas(self.main_menu.window, width=self.window_width, height=self.window_height, bg='black')
-        self.field.place(x=-1, y=-1)
+        self.field = tk.Canvas(self.window, width=self.window_width, height=self.window_height, bg='black',
+                               highlightthickness=0)
+        self.field.place(x=0, y=0)
 
         for row_num, row in enumerate(self.game_map):
             for cell_num, cell in enumerate(row):
@@ -225,9 +224,9 @@ class Game:
                                      self.offset_y + self.map_height + self.cell_size + 1),
                                     outline='black', width=self.cell_size * 2)
 
-        self.field.create_rectangle((0, 0), (self.window_width + 1, self.window_height / 20), fill='black',
+        self.field.create_rectangle((-1, -1), (self.window_width + 1, self.window_height / 20), fill='black',
                                     outline='purple')
-        self.field.create_rectangle((0, self.window_height - self.window_height / 40),
+        self.field.create_rectangle((-1, self.window_height - self.window_height / 40),
                                     (self.window_width + 1, self.window_height + 1),
                                     fill='black', outline='purple')
 
@@ -310,8 +309,8 @@ class TimeRaceGameMode(Game):
     _time_label = None
     score_label = None
 
-    def __init__(self, main_menu, game_map):
-        super().__init__(main_menu, game_map)
+    def __init__(self, window, game_map):
+        super().__init__(window, game_map)
         self.max_game_duration = game_map["maxGameDuration"]
 
     def lost_game(self):
@@ -417,7 +416,7 @@ class MiniView:
         outer_frames[3].place(x=game.window_width, y=int(41 / 80 * game.window_height), anchor='ne',
                               height=int(35 / 80 * game.window_height), width=int(0.25 * game.window_width))
 
-        game.main_menu.window.update()
+        game.window.update()
         print(outer_frames[0].winfo_width())
         playername_labels = [
             tk.Label(outer_frames[0], text="Player 1", font=('Arial', int(game.window_height / 60), 'bold'),
@@ -445,7 +444,7 @@ class MiniView:
         frames[2].pack(side='top', fill='both', expand=True)
         frames[3].pack(side='top', fill='both', expand=True)
 
-        game.main_menu.window.update()
+        game.window.update()
         print(outer_frames[0].winfo_width())
 
         mini_views = [

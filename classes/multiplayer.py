@@ -1,6 +1,9 @@
 import json
+import os
 import threading
+from collections.abc import Callable
 from queue import Queue
+from typing import Tuple, List
 from urllib.parse import quote
 
 import requests
@@ -28,13 +31,13 @@ class MultiplayerGameWrapper:
         self.main_menu = main_menu
         self.gui_queue = Queue()
 
-    def create(self, gm_class, username):
+    def create(self, gm_class):
         self.gm_class = gm_class
-        self.username = username
+        self.username = MultiplayerGameWrapper._get_username()
 
         payload = {
-            "name": username + "'s lobby",
-            "hostUsername": username,
+            "name": self.username + "'s lobby",
+            "hostUsername": self.username,
             "gmShortName": gm_class.gm_short,
         }
 
@@ -62,13 +65,13 @@ class MultiplayerGameWrapper:
 
         self.lobby_code = None
 
-    def join(self, lobby_code, username):
+    def join(self, lobby_code):
         self.lobby_code = lobby_code
-        self.username = username
+        self.username = MultiplayerGameWrapper._get_username()
 
         payload = {
             "lobbyCode": self.lobby_code,
-            "username": username
+            "username": self.username
         }
 
         r = requests.post(f"{constants.API_BASE_URL}/lobbies/join", json=payload)
@@ -101,16 +104,15 @@ class MultiplayerGameWrapper:
 
         self.lobby_code = None
 
-    @staticmethod
-    def get_lobby_list() -> dict:
+    def get_lobby_list(self) -> List[Tuple[str, Callable]]:
         r = requests.get(f"{constants.API_BASE_URL}/lobbies")
         r.raise_for_status()
 
         data = r.json()
-        data_btns = {}
+        data_btns = []
 
         for lobby in data:
-            data_btns[lobby["code"]] = f'{lobby["code"]} {len(lobby["players"])}/5'
+            data_btns.append((f'{lobby["code"]} {len(lobby["players"])}/5', lambda: self.join(lobby["code"])))
 
         return data_btns
 
@@ -192,6 +194,15 @@ class MultiplayerGameWrapper:
             }
             self.ws.send(json.dumps(update))
 
+    @staticmethod
+    def _get_username():
+        username = None
+        if os.path.isfile('./user_data/multiplayer_wrapper.json'):
+            with open('./user_data/multiplayer_wrapper.json') as json_file:
+                data = json.load(json_file)
+                username = data.get('username')
+
+        return username
 
     def _process_gui_queue(self):
         while not self.gui_queue.empty():

@@ -167,7 +167,7 @@ class Pac(CharacterEntity):
             arc_size += 30
             arc_size = min(arc_size, 0)
             self.game.field.itemconfig(self.graphic_obj, start=self.direction - arc_size / 2, extent=arc_size)
-            self.game.main_menu.window.update()
+            self.game.window.update()
             time.sleep(0.03)
 
         self.game.lost_game()

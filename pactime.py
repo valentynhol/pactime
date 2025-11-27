@@ -1,5 +1,5 @@
-from classes.main_menu import MainMenu
+from classes.game_window import GameWindow
 
 
 if __name__ == "__main__":
-    menu = MainMenu()
+    menu = GameWindow()
