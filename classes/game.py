@@ -1,367 +1,331 @@
-import copy
 import tkinter as tk
+import typing
+import random
+import time
 
-from classes.character_entities import *
+from classes.character_entities import Pac, Ghost
 from classes.exceptions import MapGenerationError
+from classes.gui.widgets import Frame, Label
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from classes.gui.pages.game_page import GamePage
 
 
 class Game:
     gm_name = "Default"
     gm_short = "def"
 
-    field = None
-    game_map = None
-    pac = None
+    # noinspection PyTypeChecker
+    def __init__(self, frame: Frame, game_page: 'GamePage', cell_size: int, game_map_json: dict):
+        self._game_page = game_page
+        self._game_map = game_map_json["gameMap"]
+        self._cell_size = cell_size
+        self._dot_num = 0
+        self._pac: Pac
+        self.process = "game"
 
-    window_height = 0
-    window_width = 0
-    map_width = 0
-    map_height = 0
-    offset_x = 0
-    offset_y = 0
-    cell_size = 0
+        self._canvas = tk.Canvas(frame, bg='black', highlightthickness=0)
+        self._canvas.pack(fill="both", expand=True)
 
-    process = 'game'
-    dot_num = 0
-
-    _map_local_copy = None
-
-    _modal = []
-
-    def __init__(self, window, game_map):
-        self.window = window
-
-        self._reset_properties()
-
-        self._map_local_copy = game_map["gameMap"]
-        self.game_map = copy.deepcopy(self._map_local_copy)
-
-    def start(self):
-        self.game_window_init()
-
-        try:
-            while self.window:
-                self.game_window_update()
-        except tk.TclError:
-            pass
-
-    def game_window_init(self):
-        self._map_init()
-        self._gui_init()
-
-        self.field.bind_all('<KeyPress>', self.pac.turn)
-        self.field.bind_all('<KeyRelease>', self._process_change)
-
-    def game_window_update(self):
-        self.window.update_idletasks()
-        self._game_cycle()
-        self.window.update()
-
-    def restart_game(self):
-        self.field.delete('all')
-        self.pac = None
-        self.game_map = None
-
-        self._reset_properties()
-
-        self.game_map = copy.deepcopy(self._map_local_copy)
-        self._map_init()
-        self._gui_init()
-
-        self.field.bind_all('<KeyPress>', self.pac.turn)
-        self.field.bind_all('<KeyRelease>', self._process_change)
-
-    def close_game(self):
-        self.field.destroy()
-        self.window.update_idletasks()
-        self.field = None
-
-    def won_game(self):
-        self._show_modal()
-        self._modal.append(self.field.create_text(0.5 * self.window_width, 0.455 * self.window_height,
-                                                  text='You won!', fill='white',
-                                                  font=('ArialBold', int(0.01 * self.window_height))))
-        self._modal.append(self.field.create_text(0.5 * self.window_width, 0.485 * self.window_height,
-                                                  text='Your score: ' + str(self.score), fill='white',
-                                                  font=('ArialBold', int(0.008 * self.window_height))))
-        self._modal.append(self.field.create_text(0.5 * self.window_width, 0.55 * self.window_height,
-                                                  text='Press "Enter" tо restart game', fill='white',
-                                                  font=('Arial', int(0.005 * self.window_height))))
-        self.process = 'game_ended'
-
-    def lost_game(self):
-        self._show_modal()
-        self._modal.append(self.field.create_text(0.5 * self.window_width, 0.475 * self.window_height,
-                                                  text="Game over", fill='white',
-                                                  font=('ArialBold', int(0.01 * self.window_height))))
-        self._modal.append(self.field.create_text(0.5 * self.window_width, 0.55 * self.window_height,
-                                                  text='Press "Enter" tо restart game', fill='white',
-                                                  font=('Arial', int(0.005 * self.window_height))))
-        self.process = 'game_ended'
-
-    def _reset_properties(self):
-        self.process = 'game'
-
-    def _open_menu(self):
-        self._show_modal()
-
-        self._modal.append(self.field.create_text(0.5 * self.window_width, 0.455 * self.window_height,
-                                                  text='Menu', fill='white', font=('ArialBold', 18)))
-        self._modal.append(self.field.create_text(0.5 * self.window_width, 0.53 * self.window_height,
-                                                  text='Press "Esc" to continue game', fill='white',
-                                                  font=('Arial', int(0.005 * self.window_height))))
-        self._modal.append(self.field.create_text(0.5 * self.window_width, 0.55 * self.window_height,
-                                                  text='Press "Enter" tо restart game', fill='white',
-                                                  font=('Arial', int(0.005 * self.window_height))))
-
-        self.process = 'menu'
-
-    def _close_menu(self):
-        if self.field:
-            self._hide_modal()
-
-            self.process = 'game'
-
-    def _show_modal(self):
-        self._modal.append(self.field.create_rectangle((0.35 * self.window_width, 0.4 * self.window_height),
-                                                       (0.65 * self.window_width, 0.6 * self.window_height),
-                                                       fill='black', outline='purple'))
-
-    def _hide_modal(self):
-        for element in self._modal:
-            self.field.delete(element)
-
-        self._modal = []
-
-    def _game_cycle(self):
-        try:
-            time.sleep(0.03)
-            if self.process == 'game':
-                self.pac.move()
-
-                self._game_rules()
-        except KeyboardInterrupt:
-            exit()
-
-    def _game_rules(self):
-        pass
-
-    def _process_change(self, event):
-        if self.field:
-            key = event.keysym
-            if self.process == 'game':
-                if key == 'Escape':
-                    self._open_menu()
-            elif self.process == 'menu':
-                if key == 'Return':
-                    self.restart_game()
-                if key == 'Escape':
-                    self._close_menu()
-                if key == 'BackSpace':
-                    self.close_game()
-                    del self
-            elif self.process == 'game_ended':
-                if key == 'Return':
-                    self.restart_game()
-
-    def _map_init(self):
-        self.window_height = self.window.window_height
-        self.window_width = self.window.window_width
-
-        self.cell_size = min((self.window_height * 36 / 40) // len(self.game_map),
-                             (self.window_width * 19 / 40) // len(self.game_map[0]), 40)
-
-        self.map_width = len(self.game_map[0]) * self.cell_size + 0.5 * self.cell_size
-        self.map_height = len(self.game_map) * self.cell_size + 0.5 * self.cell_size
-
-        self.offset_x = 0.5 * (self.window_width - self.map_width)
-        self.offset_y = 0.5 * (1.025 * self.window_height - self.map_height)
-
-        self.field = tk.Canvas(self.window, width=self.window_width, height=self.window_height, bg='black',
-                               highlightthickness=0)
-        self.field.place(x=0, y=0)
-
-        for row_num, row in enumerate(self.game_map):
+        for row_num, row in enumerate(self._game_map):
             for cell_num, cell in enumerate(row):
-                x = cell_num * self.cell_size + self.offset_x + 0.25 * self.cell_size
-                y = row_num * self.cell_size + self.offset_y + 0.25 * self.cell_size
+                x = cell_num*cell_size + 0.25*cell_size
+                y = row_num*cell_size + 0.25*cell_size
 
-                if self.game_map[row_num][cell_num] == '#':
-                    end_x = x + self.cell_size
-                    end_y = y + self.cell_size
-
-                    self.field.create_rectangle((x, y), (end_x, end_y), fill='purple', tags="Wall")
-
-                elif self.game_map[row_num][cell_num] == '.':
-                    start_x = x + 0.41 * self.cell_size
-                    start_y = y + 0.41 * self.cell_size
-                    end_x = x + 0.59 * self.cell_size
-                    end_y = y + 0.59 * self.cell_size
-
-                    self.game_map[row_num][cell_num] = self.field.create_rectangle((start_x, start_y), (end_x, end_y),
-                                                                                   fill='white', tags="Dot")
-                    self.dot_num += 1
-
-                elif self.game_map[row_num][cell_num] == ' ':
+                if self._game_map[row_num][cell_num] == '#':
+                    self._canvas.create_rectangle(
+                        (x, y),
+                        (x + cell_size, y + cell_size),
+                        fill="purple",
+                        tags="Wall"
+                    )
+                elif self._game_map[row_num][cell_num] == '.':
+                    self._game_map[row_num][cell_num] = self._canvas.create_rectangle(
+                        (x + 0.41*cell_size, y + 0.41*cell_size),
+                        (x + 0.59*cell_size, y + 0.59*cell_size),
+                        fill="white",
+                        tags="Dot"
+                    )
+                    self._dot_num += 1
+                elif self._game_map[row_num][cell_num] == 'p':
+                    self.pac = Pac(self, self._canvas, self._game_map, self._cell_size, cell_num, row_num)
+                elif self._game_map[row_num][cell_num] == ' ':
                     pass
-
                 else:
                     if not self._more_game_objects(row_num, cell_num):
                         raise MapGenerationError(
-                            f"Unknown character found in the map table: '{self.game_map[row_num][cell_num]}'. "
+                            f"Unknown character found in the map matrix: '{self._game_map[row_num][cell_num]}'. "
                             f"If you are the creator of this map, replace the character on position "
-                            f"{[row_num, cell_num]} with valid one")
+                            f"{[row_num, cell_num]} with valid one."
+                        )
 
         if not self.pac:
             raise MapGenerationError(
-                "Map has no pacman location specified!!! If you are the creator of this map, you should "
-                "set 'p' in map array to set pacman start location.")
+                "Map has no pacman location specified. If you are the creator of this map, you should set 'p' in the "
+                "matrix of the map to set the pacman's start location."
+            )
 
-        self.field.tag_raise("CharacterEntity", "Dot")
+        self._canvas.tag_raise("CharacterEntity", "Dot")
 
-        self.field.create_rectangle((self.offset_x - self.cell_size, self.offset_y - self.cell_size),
-                                    (self.offset_x + self.map_width + self.cell_size,
-                                     self.offset_y + self.map_height + self.cell_size + 1),
-                                    outline='black', width=self.cell_size * 2)
+        self._canvas.bind_all('<KeyRelease>', self._process_change)
 
-        self.field.create_rectangle((-1, -1), (self.window_width + 1, self.window_height / 20), fill='black',
-                                    outline='purple')
-        self.field.create_rectangle((-1, self.window_height - self.window_height / 40),
-                                    (self.window_width + 1, self.window_height + 1),
-                                    fill='black', outline='purple')
+        # noinspection PyTypeChecker
+        self._canvas.after(30, self._game_cycle)
+
+    def cleanup(self):
+        self._canvas.destroy()
+
+    def on_win(self):
+        self.process = 'game_ended'
+        self._game_page.win()
+
+    def on_lose(self):
+        self.process = 'game_ended'
+        self._game_page.lose()
+
+    def pause(self):
+        self.process = 'menu'
+        self._game_page.pause()
+
+    def continue_game(self):
+        if self.process == 'menu':
+            self._game_page.close_modal()
+            self.process = 'game'
+
+    def remove_dot(self, x: int, y: int):
+        self._canvas.delete(self._game_map[int(y)][int(x)])
+        self._game_map[int(y)][int(x)] = ' '
+        self._dot_num -= 1
+
+    def _game_cycle(self):
+        if self.process == 'game':
+            self.pac.move()
+            self._game_rules()
+
+        # noinspection PyTypeChecker
+        self._canvas.after(30, self._game_cycle)
+
+    def _process_change(self, event):
+        if self._canvas:
+            key = event.keysym
+            if self.process == 'game':
+                if key == 'Escape':
+                    self.pause()
+            elif self.process == 'menu':
+                if key == 'Escape':
+                    self.continue_game()
+            elif self.process == 'game_ended':
+                if key == 'Return':
+                    self.cleanup()
+                    self._game_page.game_start()
+
+    """
+    Extension methods
+    """
+    def _game_rules(self):
+        pass
 
     def _more_game_objects(self, row_num, cell_num):
-        if self.game_map[row_num][cell_num] == 'p':
-            self.pac = Pac(self, cell_num, row_num)
-            return True
-        return False
+        pass
 
-    def _gui_init(self):
-        self.field.create_text(self.window_width / 2, self.window_height - self.window_height / 110,
-                               text='Menu -- "Esc"',
-                               fill='white', font=('ArialBold', self.window_height // 90), anchor='center')
+    def init_win_modal_content(self, frame: Frame):
+        pass
+
+    def init_lose_modal_content(self, frame: Frame):
+        pass
+
+    def init_pause_modal_content(self, frame: Frame):
+        pass
+
+    def init_top_bar_content(self, frame: Frame):
+        pass
+
+    # noinspection PyMethodMayBeStatic
+    def init_bottom_bar_content(self, frame: Frame):
+        Label(
+            frame,
+            text='Menu -- "Esc"',
+            fontsize=frame.winfo_height()//4,
+            fg='white'
+        ).pack(side="top", fill="both")
 
 
 class ClassicGameMode(Game):
     gm_name = "Classic"
     gm_short = "cl"
 
-    score = 0
-    ghosts = []
-
-    def lost_game(self):
-        super().lost_game()
-        self._modal.append(self.field.create_text(0.5 * self.window_width, 0.440 * self.window_height,
-                                                  text="You've died!", fill='white',
-                                                  font=('ArialBold', int(0.01 * self.window_height))))
-
-    def _reset_properties(self):
-        self.process = 'game'
+    def __init__(self, frame: Frame, game_page: 'GamePage', cell_size: int, game_map_json: dict):
         self.score = 0
-        self.ghosts = []  # comment this to see something funny
+        self.ghosts = []
+        self._score_label: typing.Optional[Label] = None
+        super().__init__(frame, game_page, cell_size, game_map_json)
 
-    def _gui_init(self):
-        self.score_label = self.field.create_text(40, self.window_height / 40, text='Score: 0', fill='white',
-                                                  font=('ArialBold', self.window_height // 50), anchor='w')
+    def _game_cycle(self):
+        if self.process == 'game':
+            self.pac.move()
+            for ghost in self.ghosts:
+                ghost.move()
+            self._game_rules()
 
-        self.field.create_text(self.window_width / 2, self.window_height - self.window_height / 110,
-                               text='Menu -- "Esc"',
-                               fill='white', font=('ArialBold', self.window_height // 90), anchor='center')
+        # noinspection PyTypeChecker
+        self._canvas.after(30, self._game_cycle)
 
     def _game_rules(self):
-        if 0 == self.dot_num:
-            self.won_game()
+        if 0 == self._dot_num:
+            self.on_win()
 
     def _more_game_objects(self, row_num, cell_num):
         if super()._more_game_objects(row_num, cell_num):
             return True
-        elif self.game_map[row_num][cell_num] == 'g':
-            self.ghosts.append(Ghost(self, cell_num, row_num,
-                                     random.choice(["red", "blue", "orange", "pink", "cyan", "gray", "brown"])))
+        elif self._game_map[row_num][cell_num] == 'g':
+            self.ghosts.append(Ghost(
+                self,
+                self._canvas,
+                self._game_map,
+                self._cell_size,
+                cell_num,
+                row_num,
+                random.choice(["red", "blue", "orange", "pink", "cyan", "gray", "brown"])
+            ))
             return True
         return False
 
-    def _game_cycle(self):
-        try:
-            time.sleep(0.03)
-            if self.process == 'game':
-                self.pac.move()
+    def init_win_modal_content(self, frame: Frame):
+        Label(
+            frame,
+            text="You win!",
+            fg='white',
+            fontsize=frame.winfo_height()//15
+        ).pack(side='top', fill="x")
 
-                for ghost in self.ghosts:
-                    ghost.move()
+        Label(
+            frame,
+            text=f"Your score: {self.score}",
+            fg='white',
+            fontsize=frame.winfo_height()//15
+        ).pack(side='top', fill="x")
 
-                self._game_rules()
-        except KeyboardInterrupt:
-            exit()
+    def init_lose_modal_content(self, frame: Frame):
+        Label(
+            frame,
+            text="You've died!",
+            fg='white',
+            fontsize=frame.winfo_height()//15
+        ).pack(side='top', fill="x")
+
+        Label(
+            frame,
+            text=f"Your score: {self.score}",
+            fg='white',
+            fontsize=frame.winfo_height()//15
+        ).pack(side='top', fill="x")
+
+    def init_top_bar_content(self, frame: Frame):
+        self._score_label = Label(
+            frame,
+            text="Score: 0",
+            fg='white',
+            fontsize=frame.winfo_height()//4
+        )
+        self._score_label.pack(side='left', padx=frame.winfo_width()//100)
+
+    def add_score(self, score: int):
+        self.score += score
+        self._score_label.config(text=f"Score: {str(self.score)}")
 
 
 class TimeRaceGameMode(Game):
     gm_name = "Time race"
     gm_short = "tr"
 
-    score = 0
-    max_game_duration = 0
+    def __init__(self, frame: Frame, game_page: 'GamePage', cell_size: int, game_map_json: dict):
+        self.score = 0
+        self.max_game_duration = game_map_json["maxGameDuration"]
 
-    _game_start_time = 0
-    _pause_start_time = 0
-    _pause_duration = 0
+        self._pause_start_time = 0
+        self._pause_duration = 0
 
-    _time_label = None
-    score_label = None
+        self._time_label: typing.Optional[Label] = None
+        self._score_label: typing.Optional[Label] = None
+        super().__init__(frame, game_page, cell_size, game_map_json)
 
-    def __init__(self, window, game_map):
-        super().__init__(window, game_map)
-        self.max_game_duration = game_map["maxGameDuration"]
+        self._game_start_time = time.time()
 
-    def lost_game(self):
-        super().lost_game()
-        self._modal.append(self.field.create_text(0.5 * self.window_width, 0.440 * self.window_height,
-                                                  text="Time's up!", fill='white',
-                                                  font=('ArialBold', int(0.01 * self.window_height))))
-
-    def _open_menu(self):
+    def pause(self):
         self._pause_start_time = time.time()
-        super()._open_menu()
+        super().pause()
 
-    def _close_menu(self):
-        super()._close_menu()
+    def continue_game(self):
+        super().continue_game()
         self._pause_duration += time.time() - self._pause_start_time
         self._pause_start_time = 0
-
-    def _gui_init(self):
-        self.score_label = self.field.create_text(40, self.window_height / 40, text='Score: 0', fill='white',
-                                                  font=('ArialBold', self.window_height // 50), anchor='w')
-
-        self._time_label = self.field.create_text(self.window_width - 40, self.window_height / 40,
-                                                  text='Time left: ' + str(self.max_game_duration // 60) + ':' +
-                                                       str(float(self.max_game_duration % 60)),
-                                                  fill='white', font=('ArialBold', self.window_height // 50),
-                                                  anchor='e')
-
-        self.field.create_text(self.window_width / 2, self.window_height - self.window_height / 110,
-                               text='Menu -- "Esc"',
-                               fill='white', font=('ArialBold', self.window_height // 90), anchor='center')
-
-    def _reset_properties(self):
-        self.process = 'game'
-        self.score = 0
-        self._game_start_time = time.time()
 
     def _game_rules(self):
         game_time = self.max_game_duration - (time.time() - self._game_start_time - self._pause_duration)
 
         if game_time < 0:
             self.pac.die()
-        elif 0 == self.dot_num:
+        elif 0 == self._dot_num:
             self.score += round(game_time * 1000)
-            self.won_game()
+            self.on_win()
         else:
             time_m = game_time // 60
             time_s = game_time % 60
 
             if self.process == 'game':
-                self.field.itemconfig(self._time_label,
-                                      text='Time left: ' + str(int(time_m)) + ':' + str(round(time_s, 1)))
+                self._time_label.config(text=f"Time left: {str(int(time_m))}:{str(round(time_s, 1))}")
+
+    def init_win_modal_content(self, frame: Frame):
+        Label(
+            frame,
+            text="You win!",
+            fg='white',
+            fontsize=frame.winfo_height() // 15
+        ).pack(side='top', fill="x")
+
+        Label(
+            frame,
+            text=f"Your score: {self.score}",
+            fg='white',
+            fontsize=frame.winfo_height() // 15
+        ).pack(side='top', fill="x")
+
+    def init_lose_modal_content(self, frame: Frame):
+        Label(
+            frame,
+            text="Time's up!",
+            fg='white',
+            fontsize=frame.winfo_height() // 15
+        ).pack(side='top', fill="x")
+
+        Label(
+            frame,
+            text=f"Your score: {self.score}",
+            fg='white',
+            fontsize=frame.winfo_height() // 15
+        ).pack(side='top', fill="x")
+
+    def init_top_bar_content(self, frame: Frame):
+        self._score_label = Label(
+            frame,
+            text="Score: 0",
+            fg='white',
+            fontsize=frame.winfo_height()//4
+        )
+        self._score_label.pack(side='left', padx=frame.winfo_width()//100)
+
+        self._time_label = Label(
+            frame,
+            text=f"Time left: {str(self.max_game_duration//60)}:{str(float(self.max_game_duration%60))}",
+            fg='white',
+            fontsize=frame.winfo_height()//4
+        )
+        self._time_label.pack(side='right', padx=frame.winfo_width() // 100)
+
+    def add_score(self, score: int):
+        self.score += score
+        self._score_label.config(text=f"Score: {str(self.score)}")
 
 
 class ObstacleCourseGameMode(Game):

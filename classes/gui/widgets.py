@@ -3,6 +3,7 @@ from tkinter import ttk
 from typing import Callable
 
 
+# noinspection PyTypeChecker
 class Button(tk.Button):
     def __init__(
             self,
@@ -54,6 +55,7 @@ class Button(tk.Button):
             self._action()
         else:
             self._cycle += 1
+            # noinspection PyTypeChecker
             self.after(8, self._next_frame)
 
 

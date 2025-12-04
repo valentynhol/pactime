@@ -17,7 +17,7 @@ class LobbySubmenu(ScrollableSubmenu):
     ):
         super().__init__(window, **kwargs)
         def leave():
-            self.window.multiplayer_wrapper.leave() #FIXME
+            self.window.multiplayer_wrapper.leave()
             self.window.close_submenus()
 
         def delete():

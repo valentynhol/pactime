@@ -4,9 +4,9 @@ import json
 import tkinter as tk
 from queue import Queue
 
+from classes.gui.pages.game_page import GamePage
 from classes.gui.pages.lobby_code_form import LobbyCodeForm
 from classes.gui.pages.lobby_submenu import LobbySubmenu
-from classes.gui.pages.page import Page
 from classes.gui.pages.username_form import UsernameForm
 from classes.gui.pages.btn_list_submenu import BtnListSubmenu
 from classes.gui.pages.start_screen import StartScreen
@@ -74,6 +74,7 @@ class GameWindow(tk.Tk):
         while self:
             try:
                 time.sleep(0.01)
+                # noinspection PyTypeChecker
                 self.after(0, self._process_gui_queue)
 
                 self.update_idletasks()
@@ -89,9 +90,12 @@ class GameWindow(tk.Tk):
             self.multiplayer_wrapper.start_game(game_map)
         else:
             self.unbind('<Escape>')
-            print(gm_class)
-            game = gm_class(self, game_map)
-            game.start()
+            self.open_game_page(game_map, gm_class)
+
+    def open_game_page(self, game_map_json, game_class):
+        self.close_submenus()
+        self.page = GamePage(self, game_map_json, game_class)
+        self.page.game_start()
 
     def open_start_screen(self):
         self.multiplayer_wrapper = None

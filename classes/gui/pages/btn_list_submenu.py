@@ -1,7 +1,7 @@
 from typing import Callable, Tuple, List, TYPE_CHECKING
 
 from classes.gui.widgets import Button
-from classes.gui.pages.submenu import ScrollableSubmenu, Submenu
+from classes.gui.pages.submenu import ScrollableSubmenu
 
 if TYPE_CHECKING:
     from classes.game_window import GameWindow

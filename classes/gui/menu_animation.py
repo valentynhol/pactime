@@ -31,6 +31,7 @@ class MenuAnimation:
 
         self._pac_id = canvas.create_arc((0, 0), (height, height), fill='yellow', start=-45, extent=-270)
 
+        # noinspection PyTypeChecker
         self._canvas.after(8, self._next_frame)
 
     def _next_frame(self):
@@ -51,6 +52,7 @@ class MenuAnimation:
 
         self._cycle = 0 if cycle == 119 else cycle + 1
 
+        # noinspection PyTypeChecker
         self._canvas.after(8, self._next_frame)
 
     def destroy(self):

@@ -11,6 +11,7 @@ from websocket import create_connection
 
 import constants
 from classes.game import MiniView, Game
+from constants import USERDATA_FILE
 
 
 class MultiplayerGameWrapper:
@@ -197,10 +198,10 @@ class MultiplayerGameWrapper:
     @staticmethod
     def _get_username():
         username = None
-        if os.path.isfile('./user_data/multiplayer_wrapper.json'):
-            with open('./user_data/multiplayer_wrapper.json') as json_file:
+        if os.path.isfile(USERDATA_FILE):
+            with open(USERDATA_FILE) as json_file:
                 data = json.load(json_file)
-                username = data.get('username')
+            username = data.get('username')
 
         return username
 

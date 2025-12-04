@@ -19,4 +19,4 @@ class Page(tk.Frame):
         super().__init__(window, **kwargs)
 
         self.pack(fill='both', expand=True)
-        window.update()
+        self.update()
