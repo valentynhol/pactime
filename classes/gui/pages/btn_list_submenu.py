@@ -25,8 +25,8 @@ class BtnListSubmenu(ScrollableSubmenu):
 
         self.selector_btns: List[Button] = []
         for btn_text, btn_action in btn_list:
-            btn = Button(self.content, btn_action, text=btn_text, fontsize=button_fontsize, width=int(0.9*frame_width))
-            btn.pack(side='top', pady=frame_height//60, padx=frame_width//40)
+            btn = Button(self.content, btn_action, text=btn_text, fontsize=button_fontsize, width=int(0.95*frame_width))
+            btn.pack(side='top')
             self.selector_btns.append(btn)
 
         self.update()

@@ -29,29 +29,29 @@ class StartScreen(Page):
             self,
             self.window.singleplayer,
             text='Singleplayer',
-            fontsize=self.window_height//30,
-            width=15
+            fontsize=self.window_height//25,
+            width=self.window_width//2
         ))
         self.menu_btns.append(Button(
             self,
             self.window.multiplayer,
             text='Multiplayer',
-            fontsize=self.window_height//30,
-            width=15
+            fontsize=self.window_height//25,
+            width=self.window_width//2
         ))
         self.menu_btns.append(Button(
             self,
             self.window.options,
             text='Options',
-            fontsize=self.window_height//30,
-            width=15
+            fontsize=self.window_height//25,
+            width=self.window_width//2
         ))
         self.menu_btns.append(Button(
             self,
             self.window.quit,
             text='Quit',
-            fontsize=self.window_height//30,
-            width=15
+            fontsize=self.window_height//25,
+            width=self.window_width//2
         ))
 
         self.menu_btns[0].place(x=0.5*self.window_width, y=15/30*self.window_height, anchor='center')

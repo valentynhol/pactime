@@ -18,5 +18,5 @@ class Page(tk.Frame):
         kwargs.setdefault('background', 'black')
         super().__init__(window, **kwargs)
 
-        self.pack(fill='both', expand=True)
+        self.place(x=0, y=0, relwidth=1, relheight=1)
         self.update()

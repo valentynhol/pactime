@@ -16,14 +16,15 @@ class Game:
     gm_name = "Default"
     gm_short = "def"
 
-    # noinspection PyTypeChecker
     def __init__(self, frame: Frame, game_page: 'GamePage', cell_size: int, game_map_json: dict):
         self._game_page = game_page
         self._game_map = game_map_json["gameMap"]
         self._cell_size = cell_size
         self._dot_num = 0
         self._pac: Pac
+        self._last_dot_positions: typing.Optional[set[tuple[int, int]]] = None
         self.process = "game"
+        self._won = False
 
         self._canvas = tk.Canvas(frame, bg='black', highlightthickness=0)
         self._canvas.pack(fill="both", expand=True)
@@ -74,14 +75,18 @@ class Game:
         self._canvas.after(30, self._game_cycle)
 
     def cleanup(self):
+        self._canvas.unbind_all('<KeyPress>')
+        self._canvas.unbind_all('<KeyRelease>')
         self._canvas.destroy()
 
     def on_win(self):
         self.process = 'game_ended'
+        self._won = True
         self._game_page.win()
 
     def on_lose(self):
         self.process = 'game_ended'
+        self._won = False
         self._game_page.lose()
 
     def pause(self):
@@ -90,13 +95,40 @@ class Game:
 
     def continue_game(self):
         if self.process == 'menu':
-            self._game_page.close_modal()
+            self._game_page.unpause()
             self.process = 'game'
 
     def remove_dot(self, x: int, y: int):
         self._canvas.delete(self._game_map[int(y)][int(x)])
         self._game_map[int(y)][int(x)] = ' '
         self._dot_num -= 1
+
+    def get_state(self):
+        pac_state = {"pos": (self.pac.x, self.pac.y), "direction": self.pac.direction} if self.pac else None
+
+        current_dots = set()
+        for row_num, row in enumerate(self._game_map):
+            for col_num, cell in enumerate(row):
+                if isinstance(cell, int):
+                    if "Dot" in self._canvas.gettags(cell):
+                        current_dots.add((col_num, row_num))
+
+        eaten_dots = set()
+        if self._last_dot_positions:
+            eaten_dots = self._last_dot_positions - current_dots
+
+        self._last_dot_positions = current_dots.copy()
+
+        return {
+            "pac_state": pac_state,
+            "eaten_dots": list(eaten_dots),
+            "game_state": self.process,
+        }
+
+    def get_stats(self) -> dict:
+        return {
+            "won": self._won
+        }
 
     def _game_cycle(self):
         if self.process == 'game':
@@ -160,6 +192,11 @@ class ClassicGameMode(Game):
         self.ghosts = []
         self._score_label: typing.Optional[Label] = None
         super().__init__(frame, game_page, cell_size, game_map_json)
+
+    def get_stats(self):
+        stats = super().get_stats()
+        stats["score"] = self.score
+        return stats
 
     def _game_cycle(self):
         if self.process == 'game':
@@ -261,6 +298,13 @@ class TimeRaceGameMode(Game):
         self._pause_duration += time.time() - self._pause_start_time
         self._pause_start_time = 0
 
+    def get_stats(self):
+        stats = super().get_stats()
+        stats["score"] = self.score
+        game_time = min(self.max_game_duration, time.time() - self._game_start_time - self._pause_duration)
+        stats["time"] = f"{game_time // 60}:{game_time % 60}"
+        return stats
+
     def _game_rules(self):
         game_time = self.max_game_duration - (time.time() - self._game_start_time - self._pause_duration)
 
@@ -331,187 +375,3 @@ class TimeRaceGameMode(Game):
 class ObstacleCourseGameMode(Game):
     gm_name = "Obstacle course"
     gm_short = "oc"
-
-
-class MiniView:
-    pac_id = None
-    game_state = None
-    gs_label = None
-
-    def __init__(self, parent_frame, game_map):
-        self.parent_frame = parent_frame
-        self.map_width = len(game_map["gameMap"][0])
-        self.map_height = len(game_map["gameMap"])
-
-        parent_frame.update_idletasks()
-        frame_width = parent_frame.winfo_width()
-        frame_height = parent_frame.winfo_height()
-
-        self.cell_size = min(frame_width / self.map_width, frame_height / self.map_height)
-
-        self.x_offset = (frame_width - self.map_width * self.cell_size) / 2
-        self.y_offset = (frame_height - self.map_height * self.cell_size) / 2
-
-        self.canvas = tk.Canvas(parent_frame, width=frame_width, height=frame_height, background='black',
-                                highlightthickness=0)
-        self.canvas.pack(fill='both', expand=True)
-
-        self.pac_state = None
-        self.dot_positions = set()
-        self.dot_ids = {}
-        self.wall_ids = set()
-
-        self._build_from_map(game_map["gameMap"])
-
-    @staticmethod
-    def init_mini_views(game):
-        outer_frames = [
-            tk.Frame(game.field, background='black'),
-            tk.Frame(game.field, background='black'),
-            tk.Frame(game.field, background='black'),
-            tk.Frame(game.field, background='black'),
-        ]
-        outer_frames[0].place(x=0, y=int(3 / 40 * game.window_height), anchor='nw',
-                              height=int(35 / 80 * game.window_height), width=int(0.25 * game.window_width))
-        outer_frames[1].place(x=game.window_width, y=int(3 / 40 * game.window_height), anchor='ne',
-                              height=int(35 / 80 * game.window_height), width=int(0.25 * game.window_width))
-        outer_frames[2].place(x=0, y=int(41 / 80 * game.window_height), anchor='nw',
-                              height=int(35 / 80 * game.window_height), width=int(0.25 * game.window_width))
-        outer_frames[3].place(x=game.window_width, y=int(41 / 80 * game.window_height), anchor='ne',
-                              height=int(35 / 80 * game.window_height), width=int(0.25 * game.window_width))
-
-        game.window.update()
-        print(outer_frames[0].winfo_width())
-        playername_labels = [
-            tk.Label(outer_frames[0], text="Player 1", font=('Arial', int(game.window_height / 60), 'bold'),
-                     fg='purple', bg='black'),
-            tk.Label(outer_frames[1], text="Player 2", font=('Arial', int(game.window_height / 60), 'bold'),
-                     fg='purple', bg='black'),
-            tk.Label(outer_frames[2], text="Player 3", font=('Arial', int(game.window_height / 60), 'bold'),
-                     fg='purple', bg='black'),
-            tk.Label(outer_frames[3], text="Player 4", font=('Arial', int(game.window_height / 60), 'bold'),
-                     fg='purple', bg='black')
-        ]
-        frames = [
-            tk.Frame(outer_frames[0], bg='black'),
-            tk.Frame(outer_frames[1], bg='black'),
-            tk.Frame(outer_frames[2], bg='black'),
-            tk.Frame(outer_frames[3], bg='black')
-        ]
-
-        playername_labels[0].pack(side='top')
-        playername_labels[1].pack(side='top')
-        playername_labels[2].pack(side='top')
-        playername_labels[3].pack(side='top')
-        frames[0].pack(side='top', fill='both', expand=True)
-        frames[1].pack(side='top', fill='both', expand=True)
-        frames[2].pack(side='top', fill='both', expand=True)
-        frames[3].pack(side='top', fill='both', expand=True)
-
-        game.window.update()
-        print(outer_frames[0].winfo_width())
-
-        mini_views = [
-            (outer_frames[0], playername_labels[0], frames[0]),
-            (outer_frames[1], playername_labels[1], frames[1]),
-            (outer_frames[2], playername_labels[2], frames[2]),
-            (outer_frames[3], playername_labels[3], frames[3])
-        ]
-
-        return mini_views
-
-    @staticmethod
-    def get_state(game):
-        pac_state = {"pos": (game.pac.x, game.pac.y), "direction": game.pac.direction} if game.pac else None
-
-        current_dots = set()
-        for row_num, row in enumerate(game.game_map):
-            for col_num, cell in enumerate(row):
-                if isinstance(cell, int):
-                    if "Dot" in game.field.gettags(cell):
-                        current_dots.add((col_num, row_num))
-
-        eaten_dots = set()
-        if hasattr(game, "_last_dot_positions"):
-            eaten_dots = game._last_dot_positions - current_dots
-
-        game._last_dot_positions = current_dots.copy()
-
-        return {
-            "pac_state": pac_state,
-            "eaten_dots": list(eaten_dots),
-            "game_state": game.process,
-        }
-
-    def apply_state(self, state):
-        new_game_state = state.get("game_state")
-        if new_game_state != self.game_state:
-            self.game_state = new_game_state
-            if new_game_state == "game":
-                self._remove_game_state_label()
-            else:
-                self._create_game_state_label()
-
-        new_pac = state.get("pac_state")
-        if new_pac != self.pac_state:
-            pac_pos = new_pac["pos"]
-            pac_dir = new_pac["direction"]
-            if hasattr(self, 'pac_id') and self.pac_id:
-                self.canvas.delete(self.pac_id)
-            if new_pac:
-                x, y = pac_pos
-                px = self.x_offset + x * self.cell_size
-                py = self.y_offset + y * self.cell_size
-                arc_size = 270
-                self.pac_id = self.canvas.create_arc(px, py, px + self.cell_size, py + self.cell_size,
-                                                     fill='yellow', start = pac_dir - arc_size / 2, extent = arc_size)
-            self.pac_state = new_pac
-
-        for dot in state.get("eaten_dots", []):
-            dot = tuple(dot)
-            if dot in self.dot_ids:
-                self.canvas.delete(self.dot_ids[dot])
-                del self.dot_ids[dot]
-
-    def _build_from_map(self, game_map):
-        self.canvas.delete("all")
-        self.dot_positions.clear()
-        self.dot_ids.clear()
-        self.wall_ids.clear()
-
-        for y, row in enumerate(game_map):
-            for x, cell in enumerate(row):
-                px = self.x_offset + x * self.cell_size
-                py = self.y_offset + y * self.cell_size
-
-                if cell == '#':
-                    self.wall_ids.add(
-                        self.canvas.create_rectangle(px, py,
-                                                     px + self.cell_size, py + self.cell_size,
-                                                     fill='purple')
-                    )
-                elif cell == '.':
-                    dot_id = self.canvas.create_rectangle(px + 0.4 * self.cell_size, py + 0.4 * self.cell_size,
-                                                          px + 0.6 * self.cell_size, py + 0.6 * self.cell_size,
-                                                          fill='white')
-                    self.dot_positions.add((x, y))
-                    self.dot_ids[(x, y)] = dot_id
-
-    def _create_game_state_label(self):
-        if self.game_state == "menu":
-            label_text = "Paused"
-        elif self.game_state == "game_ended":
-            label_text = "Game Ended"
-        else:
-            return
-
-        self.gs_label = tk.Label(self.canvas, text=label_text, font=('Arial', int(self.canvas.winfo_height() / 25), 'bold'),
-                                 background="black", foreground="purple", highlightthickness=5,
-                                 highlightbackground="purple")
-        self.gs_label.place(x=int(self.canvas.winfo_width() / 2), y=int(self.canvas.winfo_height() / 2),
-                            anchor='center')
-
-    def _remove_game_state_label(self):
-        if self.gs_label:
-            self.gs_label.destroy()
-

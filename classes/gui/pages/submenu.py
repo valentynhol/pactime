@@ -22,7 +22,6 @@ class Submenu(Page):
         frame.pack_propagate(False)
         frame.place(x=int(0.5 * self.window_width), y=int(0.5 * self.window_height), anchor='center')
 
-        self.window.bind('<Escape>', lambda e: self.window.open_start_screen())
         self.update()
 
         self._frame = frame

@@ -1,12 +1,13 @@
 import os
-import time
 import json
 import tkinter as tk
-from queue import Queue
+import typing
 
 from classes.gui.pages.game_page import GamePage
+from classes.gui.pages.game_start_countdown import GameStartCountdown
 from classes.gui.pages.lobby_code_form import LobbyCodeForm
-from classes.gui.pages.lobby_submenu import LobbySubmenu
+from classes.gui.pages.lobby_page import LobbySubmenu
+from classes.gui.pages.page import Page
 from classes.gui.pages.username_form import UsernameForm
 from classes.gui.pages.btn_list_submenu import BtnListSubmenu
 from classes.gui.pages.start_screen import StartScreen
@@ -18,7 +19,6 @@ from constants import USERDATA_FILE
 
 class GameWindow(tk.Tk):
     def __init__(self):
-        self.gui_queue = Queue()
         self.maps = os.listdir('./maps')
         self.maps.sort()
 
@@ -38,9 +38,11 @@ class GameWindow(tk.Tk):
 
         self.window_width = self.winfo_width()
         self.window_height = self.winfo_height()
-        self.multiplayer_wrapper = None
+        self.multiplayer_wrapper: typing.Optional[MultiplayerGameWrapper] = None
 
+        self.page_stack: list[Page] = []
         self.page = StartScreen(self)
+        self.remember_page = True
 
         self.mainloop()
 
@@ -70,17 +72,39 @@ class GameWindow(tk.Tk):
 
         super().quit()
 
-    def open_menu(self):
-        while self:
-            try:
-                time.sleep(0.01)
-                # noinspection PyTypeChecker
-                self.after(0, self._process_gui_queue)
+    def open_page(self, page_factory: typing.Callable, remember=True, can_return=True):
+        if self.page:
+            if self.remember_page:
+                self.page_stack.append(self.page)
+            else:
+                self.page.destroy()
 
-                self.update_idletasks()
-                self.update()
-            except KeyboardInterrupt or AttributeError:
-                break
+        self.remember_page = remember
+
+        if can_return:
+            self.bind('<Escape>', lambda e: self.open_previous_page())
+        else:
+            self.unbind('<Escape>')
+
+        self.page = page_factory()
+        return self.page
+
+    def open_previous_page(self):
+        if not self.page_stack:
+            self.open_start_screen()
+            return
+
+        if self.page:
+            self.page.destroy()
+
+        self.page = self.page_stack.pop()
+
+    def open_start_screen(self):
+        self.multiplayer_wrapper = None
+        for page in self.page_stack:
+            page.destroy()
+        self.page_stack.clear()
+        self.open_page(lambda: StartScreen(self), can_return=False)
 
     def start_game(self, gm_class, selected_map):
         with open('./maps/' + selected_map) as map_file:
@@ -92,15 +116,11 @@ class GameWindow(tk.Tk):
             self.unbind('<Escape>')
             self.open_game_page(game_map, gm_class)
 
-    def open_game_page(self, game_map_json, game_class):
-        self.close_submenus()
-        self.page = GamePage(self, game_map_json, game_class)
-        self.page.game_start()
+    def start_multiplayer_countdown(self):
+        self.multiplayer_wrapper.countdown_page = self.open_page(lambda: GameStartCountdown(self))
 
-    def open_start_screen(self):
-        self.multiplayer_wrapper = None
-        self.close_submenus()
-        self.page = StartScreen(self)
+    def open_game_page(self, game_map_json, game_class):
+        self.open_page(lambda: GamePage(self, game_map_json, game_class), remember=False, can_return=False).game_start()
 
     def open_map_selector(self, gm_class):
         btn_list = []
@@ -110,8 +130,7 @@ class GameWindow(tk.Tk):
                 if gm_class.gm_short in map_json["gameModes"]:
                     btn_list.append((map_json['name'], lambda gm=gm_class, g_map=game_map: self.start_game(gm, g_map)))
 
-        self.close_submenus()
-        self.page = BtnListSubmenu(self, btn_list)
+        self.open_page(lambda: BtnListSubmenu(self, btn_list))
 
     def open_game_mode_selector(self):
         btn_list = []
@@ -122,8 +141,7 @@ class GameWindow(tk.Tk):
                 action = lambda gm=gm_class: self.open_map_selector(gm)
             btn_list.append((gm_class.gm_name, action))
 
-        self.close_submenus()
-        self.page = BtnListSubmenu(self, btn_list)
+        self.open_page(lambda: BtnListSubmenu(self, btn_list))
 
     def open_multiplayer_action_selector(self, username):
         if os.path.isfile(USERDATA_FILE):
@@ -131,7 +149,7 @@ class GameWindow(tk.Tk):
                 data = json.load(json_file)
             lobby_code = data.get('lobby_code')
             if lobby_code:
-                self.open_lobby_submenu(self.multiplayer_wrapper.join(lobby_code, username))
+                self.open_lobby_submenu(self.multiplayer_wrapper.join(lobby_code))
                 return # TODO: rewrite
 
         with open(USERDATA_FILE, 'w') as json_file:
@@ -144,24 +162,19 @@ class GameWindow(tk.Tk):
             ('Change username', self.open_username_form)
         ]
 
-        self.close_submenus()
-        self.page = BtnListSubmenu(self, btn_list)
+        self.open_page(lambda: BtnListSubmenu(self, btn_list))
 
     def open_lobby_selector(self):
-        self.close_submenus()
-        self.page = BtnListSubmenu(self, self.multiplayer_wrapper.get_lobby_list())
+        self.open_page(lambda: BtnListSubmenu(self, self.multiplayer_wrapper.get_lobby_list()))
 
     def open_lobby_submenu(self, lobby_info):
-        self.close_submenus()
-        self.page = LobbySubmenu(self, lobby_info)
+        self.multiplayer_wrapper.lobby_page = self.open_page(lambda: LobbySubmenu(self, lobby_info))
 
     def open_lobby_code_form(self):
-        self.close_submenus()
-        self.page = LobbyCodeForm(self)
+        self.open_page(lambda: LobbyCodeForm(self))
 
     def open_username_form(self):
-        self.close_submenus()
-        self.page = UsernameForm(self)
+        self.open_page(lambda: UsernameForm(self))
 
     def close_submenus(self):
         if self.page:
@@ -169,8 +182,3 @@ class GameWindow(tk.Tk):
             self.page = None
 
         self.unbind('<Escape>')
-
-    def _process_gui_queue(self):
-        while not self.gui_queue.empty():
-            callback = self.gui_queue.get_nowait()
-            callback()

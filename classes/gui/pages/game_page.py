@@ -17,7 +17,7 @@ class GamePage(Page):
             self,
             window: 'GameWindow',
             game_map: dict,
-            game_class: typing.Type[Game],
+            game_class: type[Game],
             restartable: bool = True,
             quitable: bool = True
     ):
@@ -73,7 +73,7 @@ class GamePage(Page):
         self._modal: typing.Optional[GameModal] = None
 
     def game_start(self):
-        self.close_modal()
+        self._close_modal()
         for widget in self._top_frame.winfo_children():
             widget.destroy()
         for widget in self._bottom_frame.winfo_children():
@@ -87,16 +87,28 @@ class GamePage(Page):
         self._game.init_bottom_bar_content(self._bottom_frame)
 
     def pause(self):
-        self._open_modal("Game Paused")
-        self._game.init_pause_modal_content(self._modal.content)
+        try:
+            self._open_modal("Game Paused")
+            self._game.init_pause_modal_content(self._modal.content)
+        except AttributeError:
+            pass
 
     def win(self):
-        self._open_modal("Game Over", can_continue=False)
-        self._game.init_win_modal_content(self._modal.content)
+        try:
+            self._open_modal("Game Over", can_continue=False)
+            self._game.init_win_modal_content(self._modal.content)
+        except AttributeError:
+            pass
 
     def lose(self):
-        self._open_modal("Game Over", can_continue=False)
-        self._game.init_lose_modal_content(self._modal.content)
+        try:
+            self._open_modal("Game Over", can_continue=False)
+            self._game.init_lose_modal_content(self._modal.content)
+        except AttributeError:
+            pass
+
+    def unpause(self):
+        self._close_modal()
 
     def _open_modal(self, title: str, can_continue: bool = True):
         self._modal = GameModal(
@@ -110,20 +122,27 @@ class GamePage(Page):
 
         self._modal.update()
 
-        padx = self._modal.winfo_width()//30
-        pady = self._modal.winfo_width()//100
+        pady = self._modal.winfo_height()//25
 
         btn_frame = Frame(self._modal, highlightthickness=0)
         btn_frame.pack(side="top", fill="x", pady=pady)
 
+        width = self._modal.winfo_width()
+        fontsize = self._modal.winfo_height()//25
+
         if can_continue:
-            Button(btn_frame, text="Continue", action=self._game.continue_game).pack(fill="x", padx=padx, pady=pady)
+            Button(btn_frame, text="Continue", action=self._game.continue_game, width=width, fontsize=fontsize).pack()
         if self._restartable:
-            Button(btn_frame, text="Restart", action=self._restart).pack(fill="x", padx=padx, pady=pady)
+            Button(btn_frame, text="Restart", action=self._restart, width=width, fontsize=fontsize).pack()
         if self._quitable:
-            Button(btn_frame, text="Quit to main menu", action=self._quit).pack(fill="x", padx=padx, pady=pady)
+            Button(btn_frame, text="Quit to main menu", action=self._quit, width=width, fontsize=fontsize).pack()
 
         self._modal.update()
+
+    def _close_modal(self):
+        if self._modal:
+            self._modal.destroy()
+            self._modal = None
 
     def _restart(self):
         if self._game:
@@ -134,7 +153,6 @@ class GamePage(Page):
     def _quit(self):
         self.window.open_start_screen()
 
-    def close_modal(self):
-        if self._modal:
-            self._modal.destroy()
-            self._modal = None
+    def destroy(self):
+        self._game.cleanup()
+        super().destroy()

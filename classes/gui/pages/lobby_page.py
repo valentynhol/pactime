@@ -12,19 +12,19 @@ class LobbySubmenu(ScrollableSubmenu):
     def __init__(
             self,
             window: 'GameWindow',
-            lobby_info: List[Tuple[str, str, List[str]]],
+            lobby_info: List[Tuple[str, str, str, List[str]]],
             **kwargs
     ):
         super().__init__(window, **kwargs)
         def leave():
             self.window.multiplayer_wrapper.leave()
-            self.window.close_submenus()
+            self.window.open_start_screen()
 
         def delete():
             self.window.multiplayer_wrapper.delete()
-            self.window.close_submenus()
+            self.window.open_start_screen()
 
-        lobby_name, lobby_code, player_list = lobby_info
+        lobby_name, lobby_code, local_player_name, player_list = lobby_info
         frame_height = self._frame.winfo_height()
         frame_width = self._frame.winfo_width()
         
@@ -35,23 +35,29 @@ class LobbySubmenu(ScrollableSubmenu):
         )
         self._lobby_name_label.pack(side='top', pady=frame_height//60, padx=frame_width//40)
 
-        self._code_label = Label(self.content, text=f'Lobby code:', fontsize=frame_height//15)
-        self._code_label.pack(side='top', pady=frame_height//60, padx=frame_width//40)
+        self._code_frame = Frame(self.content, highlightthickness=0)
+        self._code_frame.pack(side='top', pady=frame_height//60, padx=frame_width//40)
 
-        self._code = TextBox(self.content, fontsize=frame_height//15, width=int(0.9*frame_width))
+        self._code_label = Label(self._code_frame, text=f'Lobby code:', fontsize=frame_height//20)
+        self._code_label.pack(side='left', padx=frame_width//40)
+
+        self._code = TextBox(self._code_frame, fontsize=frame_height//20, width=int(0.9*frame_width))
         self._code.end_insert(lobby_code)
         self._code.disable()
-        self._code.pack(side='top', pady=frame_height//60, padx=frame_width//40)
+        self._code.pack(side='right', padx=frame_width//40)
 
-        self._player_list_label = Label(self.content, text='Players:', fontsize=frame_height//15)
+        self._player_list_label = Label(self.content, text='Players:', fontsize=frame_height//20)
         self._player_list_label.pack(side='top', pady=frame_height//120, padx=frame_width//40)
 
         self._player_list_frame = Frame(self.content)
-        self._player_list_frame.pack(side='top', pady=frame_height//120, padx=frame_width//40)
+        self._player_list_frame.pack(side='top', pady=frame_height//120, padx=frame_width//40, fill="x")
 
         self._player_list: List[Label] = []
         for player in player_list:
-            label = Label(self._player_list_frame, text=player, fontsize=frame_height//30)
+            if player == local_player_name:
+                label = Label(self._player_list_frame, text=player, fontsize=frame_height//30, bg='purple', fg='black')
+            else:
+                label = Label(self._player_list_frame, text=player, fontsize=frame_height//30)
             label.pack(side='top', pady=frame_height//120, padx=frame_width//40)
             self._player_list.append(label)
 
@@ -84,7 +90,7 @@ class LobbySubmenu(ScrollableSubmenu):
 
         self.update()
 
-    def update_player_list(self, player_list):
+    def update_player_list(self, local_player_name, player_list):
         frame_height = self._frame.winfo_height()
         frame_width = self._frame.winfo_width()
 
@@ -94,7 +100,10 @@ class LobbySubmenu(ScrollableSubmenu):
         self._player_list.clear()
 
         for player in player_list:
-            label = Label(self._player_list_frame, text=player, fontsize=frame_height//30)
+            if player == local_player_name:
+                label = Label(self._player_list_frame, text=player, fontsize=frame_height//30, bg='purple', fg='black')
+            else:
+                label = Label(self._player_list_frame, text=player, fontsize=frame_height//30)
             label.pack(side='top', pady=frame_height//120, padx=frame_width//40)
             self._player_list.append(label)
 

@@ -1,4 +1,5 @@
 import json
+import os
 
 from classes.gui.pages.submenu import Submenu
 from classes.gui.widgets import Label, Button, Entry
@@ -32,7 +33,9 @@ class UsernameForm(Submenu):
             fontsize=frame_height//15,
             width=int(0.9*frame_width)
         )
-        self._username_entry.insert(0, UsernameForm.get_saved_username())
+        curr_username = UsernameForm.get_saved_username()
+        if curr_username:
+            self._username_entry.insert(0, curr_username)
         self._username_entry.focus_force()
         self._username_entry.pack(side='top', pady=frame_height//60, padx=frame_width//40)
 
@@ -54,8 +57,10 @@ class UsernameForm(Submenu):
 
     @staticmethod
     def save_username(username):
-        with open(USERDATA_FILE) as file:
-            json_data = json.load(file)
+        json_data = {}
+        if os.path.isfile(USERDATA_FILE):
+            with open(USERDATA_FILE) as file:
+                json_data = json.load(file)
 
         json_data['username'] = username
 
@@ -64,6 +69,9 @@ class UsernameForm(Submenu):
 
     @staticmethod
     def get_saved_username():
+        if not os.path.isfile(USERDATA_FILE):
+            return None
+
         with open(USERDATA_FILE) as file:
             json_data = json.load(file)
 
