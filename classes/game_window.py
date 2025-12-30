@@ -3,8 +3,10 @@ import json
 import tkinter as tk
 import typing
 
+from classes.exceptions import AuthFailedException
 from classes.gui.pages.game_page import GamePage
 from classes.gui.pages.game_start_countdown import GameStartCountdown
+from classes.gui.pages.google_login_page import GoogleLoginPage
 from classes.gui.pages.lobby_code_form import LobbyCodeForm
 from classes.gui.pages.lobby_page import LobbySubmenu
 from classes.gui.pages.page import Page
@@ -51,17 +53,14 @@ class GameWindow(tk.Tk):
         self.open_game_mode_selector()
 
     def multiplayer(self):
-        self.multiplayer_wrapper = MultiplayerGameWrapper(self)
-
-        if os.path.isfile(USERDATA_FILE):
-            with open(USERDATA_FILE) as json_file:
-                data = json.load(json_file)
-                username = data.get('username')
-                if username:
-                    self.open_multiplayer_action_selector(username)
-                    return
-
-        self.open_username_form()
+        token = GoogleLoginPage.get_credentials()
+        if token:
+            try:
+                self.multiplayer_wrapper = MultiplayerGameWrapper(self, token)
+            except AuthFailedException:
+                self.open_login_page()
+        else:
+            self.open_login_page()
 
     def options(self):
         pass  # TODO
@@ -143,7 +142,7 @@ class GameWindow(tk.Tk):
 
         self.open_page(lambda: BtnListSubmenu(self, btn_list))
 
-    def open_multiplayer_action_selector(self, username):
+    def open_multiplayer_action_selector(self):
         if os.path.isfile(USERDATA_FILE):
             with open(USERDATA_FILE) as json_file:
                 data = json.load(json_file)
@@ -152,20 +151,18 @@ class GameWindow(tk.Tk):
                 self.open_lobby_submenu(self.multiplayer_wrapper.join(lobby_code))
                 return # TODO: rewrite
 
-        with open(USERDATA_FILE, 'w') as json_file:
-            json_file.write(json.dumps({'username': username}))
-
         btn_list = [
             ('Create a lobby', self.open_game_mode_selector),
             ('Join a lobby', self.open_lobby_selector),
             ('Join a lobby by code', self.open_lobby_code_form),
-            ('Change username', self.open_username_form)
+            ('Change username', self.open_username_form),
+            ('Log out', self.log_out)
         ]
 
         self.open_page(lambda: BtnListSubmenu(self, btn_list))
 
     def open_lobby_selector(self):
-        self.open_page(lambda: BtnListSubmenu(self, self.multiplayer_wrapper.get_lobby_list()))
+        self.open_page(lambda: BtnListSubmenu(self, self.multiplayer_wrapper.get_lobby_btn_list()))
 
     def open_lobby_submenu(self, lobby_info):
         self.multiplayer_wrapper.lobby_page = self.open_page(lambda: LobbySubmenu(self, lobby_info))
@@ -174,7 +171,14 @@ class GameWindow(tk.Tk):
         self.open_page(lambda: LobbyCodeForm(self))
 
     def open_username_form(self):
-        self.open_page(lambda: UsernameForm(self))
+        self.open_page(lambda: UsernameForm(self), remember=False)
+
+    def open_login_page(self):
+        self.open_page(lambda: GoogleLoginPage(self), remember=False)
+
+    def log_out(self):
+        self.close_submenus()
+        GoogleLoginPage.delete_credentials()
 
     def close_submenus(self):
         if self.page:

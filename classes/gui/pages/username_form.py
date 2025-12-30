@@ -1,9 +1,5 @@
-import json
-import os
-
 from classes.gui.pages.submenu import Submenu
 from classes.gui.widgets import Label, Button, Entry
-from constants import USERDATA_FILE
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -33,7 +29,7 @@ class UsernameForm(Submenu):
             fontsize=frame_height//15,
             width=int(0.9*frame_width)
         )
-        curr_username = UsernameForm.get_saved_username()
+        curr_username = self.window.multiplayer_wrapper.get_username()
         if curr_username:
             self._username_entry.insert(0, curr_username)
         self._username_entry.focus_force()
@@ -52,27 +48,5 @@ class UsernameForm(Submenu):
         username = self._username_entry.get()
 
         if username:
-            UsernameForm.save_username(username)
-            self.window.open_multiplayer_action_selector(username)
-
-    @staticmethod
-    def save_username(username):
-        json_data = {}
-        if os.path.isfile(USERDATA_FILE):
-            with open(USERDATA_FILE) as file:
-                json_data = json.load(file)
-
-        json_data['username'] = username
-
-        with open(USERDATA_FILE, "w") as file:
-            file.write(json.dumps(json_data))
-
-    @staticmethod
-    def get_saved_username():
-        if not os.path.isfile(USERDATA_FILE):
-            return None
-
-        with open(USERDATA_FILE) as file:
-            json_data = json.load(file)
-
-        return json_data['username'] if json_data['username'] else None
+            self.window.multiplayer_wrapper.update_username(username)
+            self.window.open_multiplayer_action_selector()
