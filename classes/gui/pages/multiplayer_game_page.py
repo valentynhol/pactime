@@ -13,7 +13,7 @@ class MultiplayerGamePage(GamePage):
             window: 'GameWindow',
             game_map: dict,
             game_class: type[Game],
-            player_list: list
+            players_usernames: dict[str, str]
     ):
         super().__init__(window, game_map, game_class, False, False)
         self.update()
@@ -24,24 +24,25 @@ class MultiplayerGamePage(GamePage):
         mv_height = int(30 / 80 * height)
         mv_width = int(0.25 * width)
 
-        player_count = len(player_list)
+        player_count = len(players_usernames)
+        player_ids = list(players_usernames.keys())
 
         self._mini_views: dict[str, MiniView] = {}
         if player_count >= 1:
-            self._mini_views[player_list[0]] = MiniView(
+            self._mini_views[player_ids[0]] = MiniView(
                 self,
                 game_map,
-                player_list[0],
+                players_usernames[player_ids[0]],
                 x=0,
                 y=int(3 / 40 * height),
                 height=mv_height,
                 width=mv_width
             )
         if player_count >= 2:
-            self._mini_views[player_list[1]] = MiniView(
+            self._mini_views[player_ids[1]] = MiniView(
                 self,
                 game_map,
-                player_list[1],
+                players_usernames[player_ids[1]],
                 x=width,
                 y=int(3 / 40 * height),
                 anchor="ne",
@@ -49,20 +50,20 @@ class MultiplayerGamePage(GamePage):
                 width=mv_width
             )
         if player_count >= 3:
-            self._mini_views[player_list[2]] = MiniView(
+            self._mini_views[player_ids[2]] = MiniView(
                 self,
                 game_map,
-                player_list[2],
+                players_usernames[player_ids[2]],
                 x=0,
                 y=int(41 / 80 * height),
                 height=mv_height,
                 width=mv_width
             )
         if player_count >= 4:
-            self._mini_views[player_list[3]] = MiniView(
+            self._mini_views[player_ids[3]] = MiniView(
                 self,
                 game_map,
-                player_list[3],
+                players_usernames[player_ids[3]],
                 x=width,
                 y=int(41 / 80 * height),
                 anchor="ne",

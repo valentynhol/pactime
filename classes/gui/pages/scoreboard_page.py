@@ -9,8 +9,9 @@ class ScoreboardPage(ScrollableSubmenu):
     def __init__(
             self,
             master: 'GameWindow',
-            local_player_name: str,
+            local_player_id: str,
             players_stats: dict[str, dict],
+            players_usernames: dict[str, str],
             **kwargs
     ):
         super().__init__(master, **kwargs)
@@ -29,11 +30,11 @@ class ScoreboardPage(ScrollableSubmenu):
 
         Frame(self.content, height=2).grid(row=1, column=0, padx=5, sticky="nsew", columnspan=len(stat_headers) + 1)
 
-        for i, player in enumerate(players_stats.keys(), 2):
-            if player == local_player_name:
+        for i, player_id in enumerate(players_stats.keys(), 2):
+            if player_id == local_player_id:
                 frame = Frame(self.content, bg="purple")
                 frame.grid(row=i, column=0, padx=5, pady=5, sticky="nsew")
-                Label(frame, fontsize=fontsize, text=player, fg="black", bg="purple").pack(fill="both")
+                Label(frame, fontsize=fontsize, text=players_usernames[player_id], fg="black", bg="purple").pack(fill="both")
 
                 for j, stat in enumerate(stat_headers, 1):
                     frame = Frame(self.content, bg="purple")
@@ -42,14 +43,14 @@ class ScoreboardPage(ScrollableSubmenu):
                         frame,
                         fontsize=fontsize,
                         fontstyle="normal",
-                        text=players_stats[player][stat],
+                        text=players_stats[player_id][stat],
                         fg="black",
                         bg="purple"
                     ).pack(fill="both")
             else:
                 frame = Frame(self.content)
                 frame.grid(row=i, column=0, padx=5, pady=5, sticky="nsew")
-                Label(frame, fontsize=fontsize, text=player).pack(fill="both")
+                Label(frame, fontsize=fontsize, text=players_usernames[player_id]).pack(fill="both")
 
                 for j, stat in enumerate(stat_headers, 1):
                     frame = Frame(self.content)
@@ -58,7 +59,7 @@ class ScoreboardPage(ScrollableSubmenu):
                         frame,
                         fontsize=fontsize,
                         fontstyle="normal",
-                        text=players_stats[player][stat]
+                        text=players_stats[player_id][stat]
                     ).pack(fill="both")
 
         rows = len(players_stats) + 1

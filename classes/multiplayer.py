@@ -1,9 +1,9 @@
+import copy
 import json
 import threading
 import typing
 from collections.abc import Callable
 from queue import Queue
-from urllib.parse import quote
 
 from websocket import create_connection
 
@@ -28,7 +28,7 @@ class MultiplayerGameWrapper:
         self.gui_queue = Queue()
 
         self._lobby_code: typing.Optional[str] = None
-        self._player_list: list[str] = []
+        self._players_usernames: dict[str, str] = {}
 
         self._game_page: typing.Optional[MultiplayerGamePage] = None
         self._game_map: typing.Optional[dict] = None
@@ -63,7 +63,7 @@ class MultiplayerGameWrapper:
 
         self._lobby_code = data["code"]
         self.connect_ws()
-        return data["name"], data["code"], self._api.username, data["players"]
+        return data["name"], data["code"], data["host"] == self._api.player_id, self._api.player_id, data["players"]
 
     def delete(self):
         if not self._lobby_code:
@@ -85,14 +85,13 @@ class MultiplayerGameWrapper:
                 self.gm_class = gm_class
                 break
 
-        return data["name"], data["code"], self._api.username, data["players"]
+        return data["name"], data["code"], data["host"] == self._api.player_id, self._api.player_id, data["players"]
 
     def leave(self):
         if not self._lobby_code:
             return
 
         self.disconnect_ws()
-        self._api.leave_lobby(self._lobby_code)
         self._lobby_code = None
 
     def get_lobby_btn_list(self) -> list[tuple[str, Callable]]:
@@ -115,20 +114,20 @@ class MultiplayerGameWrapper:
 
     def update_username(self, username):
         self._api.username = username
-        self._api.update_player_info()
+        self._api.update_player_username()
 
     def get_username(self):
         return self._api.username
 
-    def play(self, connected_players):
+    def play(self, connected_players: dict[str, str]):
         if not self.gm_class or not self._game_map:
             raise ValueError("Game not initialized")
         if self.countdown_page:
             self.countdown_page = None
 
-        self._player_list = connected_players
+        self._players_usernames = copy.deepcopy(connected_players)
         self._window.close_submenus()
-        connected_players.remove(self._api.username)
+        connected_players.pop(self._api.player_id)
         self._game_page = self._window.open_page(
             lambda: MultiplayerGamePage(self._window, self._game_map, self.gm_class, connected_players),
             remember=False,
@@ -144,15 +143,8 @@ class MultiplayerGameWrapper:
             return
 
         jwt = GoogleLoginPage.get_credentials()
-        encoded_username = quote(self._api.username)
-        ws_url = f"{constants.API_WS_URL}/lobbies/{self._lobby_code}?user={encoded_username}&token={jwt}"
+        ws_url = f"{constants.API_WS_URL}/lobbies/{self._lobby_code}?token={jwt}"
         self._ws = create_connection(ws_url)
-
-        hello = {
-            "type": "HELLO",
-            "username": self._api.username
-        }
-        self._ws.send(json.dumps(hello))
 
         self._start_ws_listener()
 
@@ -175,7 +167,7 @@ class MultiplayerGameWrapper:
         if self._ws and self._game_page:
             update = {
                 "type": "STATE_UPDATE",
-                "username": self._api.username,
+                "playerId": self._api.player_id,
                 "state": self._game_page.state
             }
             self._ws.send(json.dumps(update))
@@ -219,11 +211,11 @@ class MultiplayerGameWrapper:
 
         if msg_type == "PLAYER_LIST_CHANGED":
             players = data["lobby"]["players"]
-            self.gui_queue.put(lambda: self.lobby_page.update_player_list(self._api.username, players) if self.lobby_page else None)
+            self.gui_queue.put(lambda: self.lobby_page.update_player_list(players) if self.lobby_page else None)
         elif msg_type == "STATE_UPDATE":
-            username = data["username"]
-            if username != self._api.username and username in self._player_list:
-                self.gui_queue.put(lambda: self._game_page.update_mini_view(username, data["state"]))
+            player_id = data["playerId"]
+            if player_id != self._api.player_id and player_id in self._players_usernames.keys():
+                self.gui_queue.put(lambda: self._game_page.update_mini_view(player_id, data["state"]))
         elif msg_type == "COUNTDOWN":
             self.gui_queue.put(lambda: self._countdown(data["number"]))
         elif msg_type == "GAME_START":
@@ -233,6 +225,6 @@ class MultiplayerGameWrapper:
         elif msg_type == "GAME_END":
             self.gui_queue.put(
                 lambda: self._window.open_page(
-                    lambda: ScoreboardPage(self._window, self._api.username, data["results"])
+                    lambda: ScoreboardPage(self._window, self._api.player_id, data["results"], self._players_usernames)
                 )
             )

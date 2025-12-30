@@ -9,6 +9,7 @@ from classes.exceptions import AuthFailedException
 class APIRequestHandler:
     def __init__(self, auth_token: str | None):
         self._auth_token = auth_token
+        self.player_id = None
         self.username = None
         self.email = None
 
@@ -73,14 +74,14 @@ class APIRequestHandler:
         self._handle_response(r)
 
         data = r.json()
+        self.player_id = data["id"]
         self.username = data["username"]
         self.email = data["email"]
 
-    def update_player_info(self):
-        r = self.session.put(
+    def update_player_username(self):
+        r = self.session.patch(
             f"{constants.API_BASE_URL}/players",
             json={
-                "email": self.email,
                 "username": self.username
             }
         )

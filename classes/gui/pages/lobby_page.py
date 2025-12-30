@@ -1,5 +1,3 @@
-from typing import Tuple, List
-
 from classes.gui.pages.submenu import ScrollableSubmenu
 from classes.gui.widgets import Label, Button, TextBox, Frame
 
@@ -12,10 +10,9 @@ class LobbySubmenu(ScrollableSubmenu):
     def __init__(
             self,
             window: 'GameWindow',
-            lobby_info: List[Tuple[str, str, str, List[str]]],
+            lobby_info: tuple[str, str, bool, str, dict[str, str]],
             **kwargs
     ):
-        super().__init__(window, **kwargs)
         def leave():
             self.window.multiplayer_wrapper.leave()
             self.window.open_start_screen()
@@ -24,14 +21,19 @@ class LobbySubmenu(ScrollableSubmenu):
             self.window.multiplayer_wrapper.delete()
             self.window.open_start_screen()
 
-        lobby_name, lobby_code, local_player_name, player_list = lobby_info
+        super().__init__(window, **kwargs)
+
+        lobby_name, lobby_code, is_host, local_player_id, players_usernames = lobby_info
         frame_height = self._frame.winfo_height()
         frame_width = self._frame.winfo_width()
+
+        self._local_player_id = local_player_id
         
         self._lobby_name_label = Label(
             self.content,
             text=lobby_name,
-            fontsize=frame_height//15
+            fontsize=frame_height//15,
+            wraplength=int(0.9*frame_width)
         )
         self._lobby_name_label.pack(side='top', pady=frame_height//60, padx=frame_width//40)
 
@@ -52,23 +54,24 @@ class LobbySubmenu(ScrollableSubmenu):
         self._player_list_frame = Frame(self.content)
         self._player_list_frame.pack(side='top', pady=frame_height//120, padx=frame_width//40, fill="x")
 
-        self._player_list: List[Label] = []
-        for player in player_list:
-            if player == local_player_name:
-                label = Label(self._player_list_frame, text=player, fontsize=frame_height//30, bg='purple', fg='black')
+        self._player_list_labels: list[Label] = []
+        for player_id in players_usernames.keys():
+            if player_id == local_player_id:
+                label = Label(self._player_list_frame, text=players_usernames[player_id], fontsize=frame_height//30, bg='purple', fg='black')
             else:
-                label = Label(self._player_list_frame, text=player, fontsize=frame_height//30)
+                label = Label(self._player_list_frame, text=players_usernames[player_id], fontsize=frame_height//30)
             label.pack(side='top', pady=frame_height//120, padx=frame_width//40)
-            self._player_list.append(label)
+            self._player_list_labels.append(label)
 
-        self._start_game_btn = Button(
-            self.content,
-            lambda: self.window.open_map_selector(self.window.multiplayer_wrapper.gm_class),
-            text='Start Game',
-            fontsize=frame_height//15,
-            width=int(0.9*frame_width)
-        )
-        self._start_game_btn.pack(side='top', pady=frame_height//60, padx=frame_width//40)
+        if is_host:
+            self._start_game_btn = Button(
+                self.content,
+                lambda: self.window.open_map_selector(self.window.multiplayer_wrapper.gm_class),
+                text='Start Game',
+                fontsize=frame_height//15,
+                width=int(0.9*frame_width)
+            )
+            self._start_game_btn.pack(side='top', pady=frame_height//60, padx=frame_width//40)
 
         self._leave_lobby_btn = Button(
             self.content,
@@ -79,33 +82,35 @@ class LobbySubmenu(ScrollableSubmenu):
         )
         self._leave_lobby_btn.pack(side='top', pady=frame_height//60, padx=frame_width//40)
 
-        self._delete_lobby_btn = Button(
-            self.content,
-            delete,
-            text='Delete Lobby',
-            fontsize=frame_height//15,
-            width=int(0.9*frame_width)
-        )
-        self._delete_lobby_btn.pack(side='top', pady=frame_height//60, padx=frame_width//40)
+        if is_host:
+            self._delete_lobby_btn = Button(
+                self.content,
+                delete,
+                text='Delete Lobby',
+                fontsize=frame_height//15,
+                width=int(0.9*frame_width)
+            )
+            self._delete_lobby_btn.pack(side='top', pady=frame_height//60, padx=frame_width//40)
 
-        self.update()
+            self.update()
 
-    def update_player_list(self, local_player_name, player_list):
+    def update_player_list(self, players_usernames: dict[str, str]):
         frame_height = self._frame.winfo_height()
         frame_width = self._frame.winfo_width()
 
-        for player in self._player_list:
+        for player in self._player_list_labels:
             player.destroy()
 
-        self._player_list.clear()
+        self._player_list_labels.clear()
 
-        for player in player_list:
-            if player == local_player_name:
-                label = Label(self._player_list_frame, text=player, fontsize=frame_height//30, bg='purple', fg='black')
+        for player_id in players_usernames.keys():
+            if player_id == self._local_player_id:
+                label = Label(self._player_list_frame, text=players_usernames[player_id], fontsize=frame_height//30,
+                              bg='purple', fg='black')
             else:
-                label = Label(self._player_list_frame, text=player, fontsize=frame_height//30)
+                label = Label(self._player_list_frame, text=players_usernames[player_id], fontsize=frame_height//30)
             label.pack(side='top', pady=frame_height//120, padx=frame_width//40)
-            self._player_list.append(label)
+            self._player_list_labels.append(label)
 
         self.update()
 

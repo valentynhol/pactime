@@ -47,6 +47,7 @@ class TextBox(tk.Text):
         kwargs.setdefault('relief', 'flat')
         kwargs.setdefault('cursor', 'hand2')
         kwargs.setdefault('selectbackground', 'purple')
+        kwargs.setdefault('inactiveselectbackground', 'purple')
         kwargs.setdefault('insertbackground', 'purple')
         kwargs.setdefault('insertwidth', 5)
         kwargs.setdefault('wrap', 'none')
