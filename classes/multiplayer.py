@@ -106,6 +106,9 @@ class MultiplayerGameWrapper:
 
         return data_btns
 
+    def get_allowed_game_modes(self):
+        return self._api.get_allowed_game_modes()
+
     def start_game(self, game_map):
         if not self._lobby_code:
             return

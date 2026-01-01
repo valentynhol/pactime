@@ -132,9 +132,19 @@ class GameWindow(tk.Tk):
         self.open_page(lambda: BtnListSubmenu(self, btn_list))
 
     def open_game_mode_selector(self):
+        allowed_gm_list = None
+        if self.multiplayer_wrapper:
+            allowed_gm_list = list(map(
+                lambda gm: gm["shortName"],
+                self.multiplayer_wrapper.get_allowed_game_modes()
+            ))
+
         btn_list = []
         for gm_class in Game.__subclasses__():
             if self.multiplayer_wrapper:
+                if gm_class.gm_short not in allowed_gm_list:
+                    continue
+
                 action = lambda gm=gm_class: self.open_lobby_submenu(self.multiplayer_wrapper.create(gm))
             else:
                 action = lambda gm=gm_class: self.open_map_selector(gm)

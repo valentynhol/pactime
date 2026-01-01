@@ -69,6 +69,12 @@ class APIRequestHandler:
         )
         self._handle_response(r)
 
+    @staticmethod
+    def get_allowed_game_modes():
+        r = requests.get(f"{constants.API_BASE_URL}/game-modes")
+        r.raise_for_status()
+        return r.json()
+
     def get_player_info(self):
         r = self.session.get(f"{constants.API_BASE_URL}/players")
         self._handle_response(r)
